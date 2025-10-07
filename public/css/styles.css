@@ -1,0 +1,356 @@
+/* =================================================================== */
+/* ARCHIVO CSS DEFINITIVO PARA EL SISTEMA DE TRÁMITES                  */
+/* =================================================================== */
+
+/* --- Variables de Color y Fuentes --- */
+:root {
+    --font-principal: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --color-fondo: #f4f7f9;
+    --color-texto-principal: #333a45;
+    --color-texto-secundario: #5a6a7e;
+    --color-ipn-azul: #004a99;
+    --color-ipn-guinda: #8c1d40;
+    --color-borde: #dde3ea;
+    --color-blanco: #ffffff;
+    --color-exito: #28a745;
+    --color-error: #dc3545;
+    --color-advertencia: #ffc107;
+}
+
+/* --- Estilos Generales --- */
+body {
+    font-family: var(--font-principal);
+    background-color: var(--color-fondo);
+    color: var(--color-texto-principal);
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+}
+
+/* --- Contenedor Principal --- */
+.container {
+    max-width: 900px; /* Un poco más ancho para las tablas */
+    margin: 20px auto;
+    padding: 30px 40px;
+    background: var(--color-blanco);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 39, 87, 0.1);
+    border: 1px solid var(--color-borde);
+}
+
+/* --- Tipografía --- */
+h1 {
+    color: var(--color-ipn-azul);
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+}
+h2 {
+    color: var(--color-ipn-azul);
+    margin-top: 30px;
+    border-bottom: 2px solid #f0f2f5;
+    padding-bottom: 10px;
+    font-size: 1.4rem;
+}
+h3 {
+    margin-top: 0;
+    color: #333;
+}
+p {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: var(--color-texto-secundario);
+}
+a {
+    color: var(--color-ipn-guinda);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- Formularios --- */
+form {
+    display: flex;
+    flex-direction: column;
+}
+.form-group {
+    margin-bottom: 22px;
+}
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--color-ipn-azul);
+    box-shadow: 0 0 5px rgba(0, 74, 153, 0.2);
+    outline: none;
+}
+
+/* --- Botones --- */
+.btn {
+    display: inline-block; /* Cambiado para que se ajuste al contenido si es necesario */
+    width: auto;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--color-blanco);
+    background-color: var(--color-ipn-guinda);
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+.btn:hover {
+    background-color: #6b1631;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.menu-buttons .btn {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* --- Tablas (Para Dashboards) --- */
+.table-container {
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    border: 1px solid var(--color-borde);
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+th {
+    background-color: var(--color-ipn-azul);
+    color: var(--color-blanco);
+}
+tr:nth-child(even) {
+    background-color: var(--color-fondo);
+}
+tr:hover {
+    background-color: #e9ecef;
+}
+td a {
+    font-weight: bold;
+    color: var(--color-ipn-azul);
+}
+
+/* --- Etiquetas de Estado (Status Tags) --- */
+.status {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 15px;
+    color: var(--color-blanco);
+    font-size: 0.9rem;
+    text-align: center;
+    white-space: nowrap;
+}
+.status.pending_review { background-color: var(--color-advertencia); color: var(--color-texto-principal); }
+.status.approved { background-color: var(--color-exito); }
+.status.rejected { background-color: var(--color-error); }
+.status.closed { background-color: var(--color-texto-secundario); }
+
+/* --- Acciones en Tablas (Aprobar, Rechazar, Eliminar) --- */
+.actions a {
+    margin-right: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.actions .approve { color: var(--color-exito); border: 1px solid var(--color-exito); }
+.actions .approve:hover { background-color: var(--color-exito); color: var(--color-blanco); }
+.actions .reject, .actions .delete { color: var(--color-error); border: 1px solid var(--color-error); }
+.actions .reject:hover, .actions .delete:hover { background-color: var(--color-error); color: var(--color-blanco); }
+
+/* --- Tarjetas de Vacantes (Para Estudiantes) --- */
+.vacancy-card {
+    background-color: var(--color-blanco);
+    border: 1px solid var(--color-borde);
+    border-left: 5px solid var(--color-ipn-azul);
+    padding: 20px 25px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+.vacancy-card h3 a { color: inherit; text-decoration: none; }
+.vacancy-card h3 a:hover { text-decoration: underline; }
+.vacancy-details { margin: 10px 0; }
+.vacancy-details span { display: inline-block; margin-right: 20px; color: var(--color-texto-secundario); font-size: 0.9rem; }
+.vacancy-description h4 { margin-top: 20px; margin-bottom: 5px; }
+.vacancy-description p { text-align: left; margin-bottom: 10px; }
+
+/* --- Mensajes de Notificación --- */
+.message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid transparent;
+}
+
+/* --- Estilos para la sección de detalles desplegable --- */
+.details-dropdown {
+    display: inline-block;
+    position: relative; /* Clave para el posicionamiento del contenido */
+}
+.details-dropdown summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-ipn-azul);
+    list-style: none; /* Quita el triángulo por defecto */
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid var(--color-ipn-azul);
+    border-radius: 4px;
+}
+.details-dropdown summary::-webkit-details-marker {
+    display: none; /* Quita el triángulo en Chrome/Safari */
+}
+.details-dropdown summary:hover {
+    background-color: var(--color-ipn-azul);
+    color: var(--color-blanco);
+}
+.details-dropdown[open] summary {
+    background-color: var(--color-ipn-azul);
+    color: var(--color-blanco);
+}
+.details-content {
+    position: absolute;
+    background-color: var(--color-blanco);
+    border: 1px solid var(--color-borde);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 15px;
+    margin-top: 5px;
+    border-radius: 5px;
+    width: 300px;
+    z-index: 10;
+    text-align: left;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.details-content strong {
+    color: #333;
+}
+.details-content p {
+    text-align: left;
+    margin: 5px 0;
+}
+
+/* --- Estilos para el Modal de Detalles --- */
+.btn-details {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-ipn-azul);
+    background-color: transparent;
+    border: 1px solid var(--color-ipn-azul);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.btn-details:hover {
+    background-color: var(--color-ipn-azul);
+    color: var(--color-blanco);
+}
+
+.modal {
+    display: none; /* Oculto por defecto */
+    position: fixed; /* Se queda fijo en la pantalla */
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Permite scroll si el contenido es largo */
+    background-color: rgba(0,0,0,0.5); /* Fondo oscuro semitransparente */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto; /* Centrado verticalmente y horizontalmente */
+    padding: 20px 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: scale(0.9);}
+    to {opacity: 1; transform: scale(1);}
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-details p {
+    text-align: left;
+    margin: 10px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.modal-details p:last-child {
+    border-bottom: none;
+}
+.modal-details strong {
+    color: var(--color-texto-principal);
+    display: inline-block;
+    width: 200px; /* Alinea los valores */
+}
+
+.message.approved { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.message.rejected, .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
