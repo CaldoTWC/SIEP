@@ -81,6 +81,11 @@ class UpisController {
         require_once(__DIR__ . '/../Views/upis/review_letters.php');
     }
 
+    public function showUploadDocumentsForm() {
+    $this->session->guard(['upis', 'admin']);
+    require_once(__DIR__ . '/../Views/upis/upload_documents.php');
+    }
+
     // ========================================================================
     // ACCIONES DE GESTIÓN DE EMPRESAS
     // ========================================================================
@@ -216,10 +221,8 @@ class UpisController {
         }
         $applicationModel = new DocumentApplication();
         if ($applicationModel->updateStatusForMultipleIds($request_ids, $new_status, $reviewer_id)) {
-            header('Location: /SIEP/public/index.php?action=upisDashboard&status=' . $redirect_status . '&count=' . $count);
-        } else {
-            header('Location: /SIEP/public/index.php?action=upisDashboard&status=error');
-        }
+            header('Location: /SIEP/public/index.php?action=reviewLetters&status=' . $redirect_status . '&count=' . $count);        } else {
+            header('Location: /SIEP/public/index.php?action=reviewLetters&status=error');        }
         exit;
     }
 

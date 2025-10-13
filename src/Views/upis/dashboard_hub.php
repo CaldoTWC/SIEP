@@ -81,6 +81,14 @@ $session->guard(['upis', 'admin']);
                 </div>
                 <div class="counter"><?php echo $pendingLettersCount; ?></div>
             </a>
+
+            <a href="/SIEP/public/index.php?action=showUploadDocumentsForm" class="task-card">
+                <div class="info">
+                <h3>📤 Subir Cartas Firmadas</h3>
+                <p>Devolver documentos firmados y sellados.</p>
+                </div>
+                <div class="counter" style="font-size: 2rem;">📄</div>
+            </a>
             <!-- Aquí podríamos añadir más tarjetas en el futuro -->
             <div class="dashboard-card">
             <a href="/SIEP/src/Controllers/ReportController.php?action=dashboard">

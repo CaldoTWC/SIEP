@@ -1,6 +1,5 @@
 <?php
-// Archivo: public/index.php (Versión Final, Limpia y Organizada)
-
+// Archivo: public/index.php (Versión Completa y Corregida)
 
 $action = $_GET['action'] ?? 'home';
 
@@ -73,7 +72,7 @@ switch ($action) {
         $studentController = new StudentController();
         $studentController->showDetailedLetterForm();
         break;
-    case 'submitDetailedLetterRequest': // <-- LA RUTA QUE FALTABA
+    case 'submitDetailedLetterRequest':
         require_once(__DIR__ . '/../src/Controllers/StudentController.php');
         $studentController = new StudentController();
         $studentController->submitDetailedLetterRequest();
@@ -156,7 +155,6 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->approveCompany();
         break;
-
     case 'rejectCompany':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
@@ -167,12 +165,61 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->reviewVacancies();
         break;
+    case 'approveVacancy':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->approveVacancy();
+        break;
+    case 'rejectVacancy':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->rejectVacancy();
+        break;
     case 'reviewLetters':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
         $upisController->reviewLetters();
         break;
-    // ... (aquí irían todas las demás rutas de la UPIS como approveCompany, etc.)
+    case 'processLetterRequests':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->processLetterRequests();
+        break;
+    case 'downloadAllApprovedLetters':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadAllApprovedLetters();
+        break;
+    case 'clearAllApprovedLetters':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->clearAllApprovedLetters();
+        break;
+    case 'showUploadDocumentsForm':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->showUploadDocumentsForm();
+        break;
+    case 'uploadSignedLetters':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->uploadSignedLetters();
+        break;
+    case 'completeAccreditation':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->completeAccreditation();
+        break;
+    case 'showHistory':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->showHistory();
+        break;
+    case 'downloadHistoryReport':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadHistoryReport();
+        break;
 
     // ===================================================================
     // --- RUTAS GENÉRICAS ---

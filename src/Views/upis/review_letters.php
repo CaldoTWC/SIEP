@@ -113,7 +113,41 @@ $session->guard(['upis', 'admin']);
     <div class="container">
         <h1>📝 Gestión de Cartas de Presentación</h1>
         <a href="/SIEP/public/index.php?action=upisDashboard" style="display: inline-block; margin-bottom: 20px;">← Volver al Panel Principal</a>
-
+        <!-- Mensajes de Estado -->
+<?php if (isset($_GET['status'])): ?>
+    <?php
+        $message = '';
+        $message_class = '';
+        $count = $_GET['count'] ?? 0;
+        
+        switch ($_GET['status']) {
+            case 'letters_approved':
+                $message = "✅ Se aprobaron {$count} solicitud(es) exitosamente.";
+                $message_class = 'success';
+                break;
+            case 'letters_rejected':
+                $message = "❌ Se rechazaron {$count} solicitud(es).";
+                $message_class = 'warning';
+                break;
+            case 'no_selection':
+                $message = "⚠️ No seleccionaste ninguna solicitud.";
+                $message_class = 'warning';
+                break;
+            case 'error':
+                $message = "❌ Ocurrió un error al procesar las solicitudes.";
+                $message_class = 'error';
+                break;
+        }
+    ?>
+    <?php if ($message): ?>
+        <div style="padding: 15px; margin: 20px 0; border-radius: 5px; 
+             background-color: <?php echo $message_class === 'success' ? '#d4edda' : ($message_class === 'warning' ? '#fff3cd' : '#f8d7da'); ?>; 
+             color: <?php echo $message_class === 'success' ? '#155724' : ($message_class === 'warning' ? '#856404' : '#721c24'); ?>; 
+             border: 1px solid <?php echo $message_class === 'success' ? '#c3e6cb' : ($message_class === 'warning' ? '#ffeaa7' : '#f5c6cb'); ?>;">
+            <?php echo $message; ?>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
         <!-- TABLA DE SOLICITUDES PENDIENTES -->
         <h2>⏳ Pendientes de Revisión</h2>
         <?php if (empty($pendingLetters)): ?>
@@ -170,6 +204,80 @@ $session->guard(['upis', 'admin']);
             </form>
         <?php endif; ?>
         
+        <!-- SECCIÓN DE CARTAS APROBADAS -->
+<h2>✅ Solicitudes Aprobadas (Listas para Procesar)</h2>
+<?php if (empty($approvedLetters)): ?>
+    <p style="padding: 20px; background: #d4edda; border-radius: 5px; text-align: center; color: #155724;">
+        ✅ No hay solicitudes aprobadas pendientes. Todas han sido procesadas.
+    </p>
+<?php else: ?>
+    <p style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+        ℹ️ <strong>Total: <?php echo count($approvedLetters); ?> carta(s) aprobada(s)</strong> lista(s) para generar, firmar y devolver.
+    </p>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Boleta</th>
+                    <th>Carrera</th>
+                    <th>Semestre</th>
+                    <th>Créditos</th>
+                    <th>Fecha Aprobación</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($approvedLetters as $letter): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($letter['first_name'] . ' ' . $letter['last_name_p'] . ' ' . $letter['last_name_m']); ?></td>
+                        <td><strong><?php echo htmlspecialchars($letter['boleta']); ?></strong></td>
+                        <td><?php echo htmlspecialchars($letter['career']); ?></td>
+                        <td><?php echo htmlspecialchars($letter['current_semester']); ?>°</td>
+                        <td><?php echo htmlspecialchars(number_format($letter['credits_percentage'], 2)); ?>%</td>
+                        <td><?php echo isset($letter['reviewed_at']) ? date('d/m/Y H:i', strtotime($letter['reviewed_at'])) : 'N/A'; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Botones de Acción -->
+    <div style="margin: 30px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <a href="/SIEP/public/index.php?action=downloadAllApprovedLetters" 
+           class="btn" target="_blank" 
+           style="background-color: #007bff; padding: 15px 25px; font-size: 16px;">
+            📦 1. Descargar Todas (ZIP)
+        </a>
+        
+        <a href="/SIEP/public/index.php?action=showUploadDocumentsForm" 
+           class="btn" 
+           style="background-color: #28a745; padding: 15px 25px; font-size: 16px;">
+            📤 2. Subir Cartas Firmadas
+        </a>
+        
+        <a href="/SIEP/public/index.php?action=clearAllApprovedLetters" 
+           class="btn" 
+           style="background-color: #6c757d; padding: 15px 25px; font-size: 16px;"
+           onclick="return confirm('⚠️ ¿Ya subiste todas las cartas firmadas?\n\nEsto eliminará las solicitudes de la lista.');">
+            🗑️ 3. Limpiar Lista
+        </a>
+    </div>
+    
+    <!-- Instrucciones del proceso -->
+    <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 20px; border-radius: 5px; margin-top: 20px;">
+        <h4 style="margin-top: 0;">📋 Proceso de Gestión:</h4>
+        <ol style="margin: 10px 0 0 20px;">
+            <li>Click en <strong>"Descargar Todas (ZIP)"</strong> para obtener los PDFs</li>
+            <li>Imprime, firma y sella cada carta</li>
+            <li>Escanea cada carta firmada como PDF con formato: <code>BOLETA_CP.pdf</code></li>
+            <li>Click en <strong>"Subir Cartas Firmadas"</strong> para devolverlas al sistema</li>
+            <li>Los estudiantes podrán descargar sus cartas desde su panel</li>
+            <li>Cuando hayas terminado, click en <strong>"Limpiar Lista"</strong></li>
+        </ol>
+    </div>
+<?php endif; ?>
+
     </div>
 
     <!-- ESTRUCTURA DE LOS MODALES PARA CARTAS -->
