@@ -51,9 +51,8 @@ $session->guard(['student']);
         <td>
             <!-- ✅ NUEVO: Descarga segura a través del controlador -->
             <a href="/SIEP/public/index.php?action=downloadDocument&id=<?php echo $doc['id']; ?>" 
-               class="btn" 
-               style="background-color: #28a745;">
-               📥 Descargar
+                class="btn">
+                📥 Descargar
             </a>
             
             <!-- Opcional: Ver en navegador -->
