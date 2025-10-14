@@ -95,23 +95,28 @@ class DocumentApplication {
      * @return array
      */
     public function getApprovedPresentationLetters() {
-        $sql = "SELECT 
-                    da.id, da.created_at, da.updated_at, da.credits_percentage,
-                    da.target_company_name,
-                    u.first_name, u.last_name_p, u.last_name_m, u.email,
-                    sp.boleta, sp.career
-                FROM document_applications da
-                JOIN users u ON da.student_user_id = u.id
-                JOIN student_profiles sp ON u.id = sp.user_id
-                WHERE da.status = 'approved' 
-                  AND da.application_type = 'presentation_letter'
-                ORDER BY da.updated_at DESC";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC); // ✅ CORRECTO: fetchAll()
-    }
+    $sql = "SELECT 
+                da.id, 
+                da.created_at, 
+                da.updated_at, 
+                da.reviewed_at, 
+                da.credits_percentage,
+                da.current_semester,  
+                da.target_company_name,
+                u.first_name, u.last_name_p, u.last_name_m, u.email,
+                sp.boleta, sp.career
+            FROM document_applications da
+            JOIN users u ON da.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE da.status = 'approved' 
+              AND da.application_type = 'presentation_letter'
+            ORDER BY da.updated_at DESC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     
     /**
      * Obtener solicitudes de un estudiante específico
@@ -215,4 +220,144 @@ class DocumentApplication {
         
         return $stmt->execute();
     }
+
+    /**
+ * Obtener todos los IDs de solicitudes aprobadas
+ * 
+ * @return array Array de IDs
+ */
+public function getAllApprovedLetterIds() {
+    $sql = "SELECT id 
+            FROM document_applications 
+            WHERE status = 'approved' 
+              AND application_type = 'presentation_letter'";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    $results = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+    return $results ? $results : [];
+}
+
+/**
+ * Obtener datos completos de estudiantes con solicitudes aprobadas
+ * Para generar las cartas en PDF
+ * 
+ * @param array $approved_ids IDs de solicitudes aprobadas
+ * @return array
+ */
+public function getApprovedStudentDataForLetters($approved_ids) {
+    if (empty($approved_ids)) {
+        return [];
+    }
+    
+    // Crear placeholders
+    $placeholders = [];
+    foreach ($approved_ids as $index => $id) {
+        $placeholders[] = ':id' . $index;
+    }
+    $placeholders_string = implode(',', $placeholders);
+    
+    $sql = "SELECT 
+                da.id as application_id,
+                u.id as student_user_id,
+                u.first_name,
+                u.last_name_p,
+                u.last_name_m,
+                CONCAT(u.first_name, ' ', u.last_name_p, ' ', u.last_name_m) as full_name,
+                CONCAT(u.last_name_p, ' ', u.last_name_m) as last_name,
+                sp.boleta,
+                sp.career,
+                da.credits_percentage as percentage_progress
+            FROM document_applications da
+            JOIN users u ON da.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE da.id IN ($placeholders_string)
+              AND da.status = 'approved'
+              AND da.application_type = 'presentation_letter'";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    // Bind cada ID
+    foreach ($approved_ids as $index => $id) {
+        $stmt->bindValue(':id' . $index, (int)$id, PDO::PARAM_INT);
+    }
+    
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Eliminar múltiples solicitudes por IDs
+ * 
+ * @param array $ids Array de IDs a eliminar
+ * @return bool
+ */
+public function deleteByIds($ids) {
+    if (empty($ids)) {
+        return false;
+    }
+    
+    // Crear placeholders
+    $placeholders = [];
+    foreach ($ids as $index => $id) {
+        $placeholders[] = ':id' . $index;
+    }
+    $placeholders_string = implode(',', $placeholders);
+    
+    $sql = "DELETE FROM document_applications WHERE id IN ($placeholders_string)";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    // Bind cada ID
+    foreach ($ids as $index => $id) {
+        $stmt->bindValue(':id' . $index, (int)$id, PDO::PARAM_INT);
+    }
+    
+    return $stmt->execute();
+}
+
+    /**
+ * Actualizar el estado de múltiples solicitudes (aprobación/rechazo en lote)
+ * 
+ * @param array $request_ids - Array de IDs de solicitudes
+ * @param string $new_status - Nuevo estado ('approved' o 'rejected')
+ * @param int $reviewer_id - ID del usuario UPIS que revisa
+ * @return bool
+ */
+public function updateStatusForMultipleIds($request_ids, $new_status, $reviewer_id) {
+    if (empty($request_ids)) {
+        return false;
+    }
+    
+    // Crear placeholders para la consulta (:id0, :id1, :id2, ...)
+    $placeholders = [];
+    foreach ($request_ids as $index => $id) {
+        $placeholders[] = ':id' . $index;
+    }
+    $placeholders_string = implode(',', $placeholders);
+    
+    $sql = "UPDATE document_applications 
+            SET status = :status, 
+                upis_reviewer_id = :reviewer_id, 
+                reviewed_at = NOW() 
+            WHERE id IN ($placeholders_string)";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    if (!$stmt) {
+        return false;
+    }
+    
+    // Bind del status y reviewer_id
+    $stmt->bindParam(':status', $new_status);
+    $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+    
+    // Bind de cada ID
+    foreach ($request_ids as $index => $id) {
+        $stmt->bindValue(':id' . $index, (int)$id, PDO::PARAM_INT);
+    }
+    
+    return $stmt->execute();
+}
 }

@@ -250,12 +250,6 @@ $session->guard(['upis', 'admin']);
             📦 1. Descargar Todas (ZIP)
         </a>
         
-        <a href="/SIEP/public/index.php?action=showUploadDocumentsForm" 
-           class="btn" 
-           style="background-color: #28a745; padding: 15px 25px; font-size: 16px;">
-            📤 2. Subir Cartas Firmadas
-        </a>
-        
         <a href="/SIEP/public/index.php?action=clearAllApprovedLetters" 
            class="btn" 
            style="background-color: #6c757d; padding: 15px 25px; font-size: 16px;"

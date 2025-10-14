@@ -30,25 +30,29 @@ class StudentDocument {
     }
     
     /**
-     * Guardar un nuevo documento
-     * 
-     * @return bool
-     */
-    public function create() {
-        $sql = "INSERT INTO student_documents 
-                (student_user_id, document_type, file_path, original_filename) 
-                VALUES 
-                (:student_user_id, :document_type, :file_path, :original_filename)";
-        
-        $stmt = $this->conn->prepare($sql);
-        
-        $stmt->bindParam(':student_user_id', $this->student_user_id, PDO::PARAM_INT);
-        $stmt->bindParam(':document_type', $this->document_type);
-        $stmt->bindParam(':file_path', $this->file_path);
-        $stmt->bindParam(':original_filename', $this->original_filename);
-        
-        return $stmt->execute();
-    }
+ * Guardar un nuevo documento
+ * 
+ * @param int $student_user_id
+ * @param string $document_type
+ * @param string $file_path
+ * @param string $original_filename
+ * @return bool
+ */
+public function create($student_user_id, $document_type, $file_path, $original_filename) {
+    $sql = "INSERT INTO student_documents 
+            (student_user_id, document_type, file_path, original_filename) 
+            VALUES 
+            (:student_user_id, :document_type, :file_path, :original_filename)";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    $stmt->bindParam(':student_user_id', $student_user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':document_type', $document_type);
+    $stmt->bindParam(':file_path', $file_path);
+    $stmt->bindParam(':original_filename', $original_filename);
+    
+    return $stmt->execute();
+}
     
     /**
      * Obtener todos los documentos de un estudiante

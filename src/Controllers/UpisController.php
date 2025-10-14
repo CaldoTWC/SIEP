@@ -249,7 +249,7 @@ class UpisController {
                 'percentage_progress' => $student['percentage_progress']
             ];
             $pdfContent = $docService->generatePresentationLetter($student_data_for_pdf, true);
-            $pdfFileName = 'Carta_Presentacion_' . $student['boleta'] . '.pdf';
+            $pdfFileName = $student['boleta'] . '_CPSF.pdf';
             $zip->addFromString($pdfFileName, $pdfContent);
         }
         $zip->close();
@@ -288,72 +288,70 @@ class UpisController {
     }
 
     public function uploadSignedLetters() {
-        $this->session->guard(['upis', 'admin']);
+    $this->session->guard(['upis', 'admin']);
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['signed_letters'])) {
-            die("Acceso no válido o no se subieron archivos.");
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['signed_letters'])) {
+        die("Acceso no válido o no se subieron archivos.");
+    }
+
+    require_once(__DIR__ . '/../Lib/FileHelper.php');
+    $userModel = new User();
+    $docModel = new StudentDocument();
+
+    $success_count = 0;
+    $error_count = 0;
+
+    foreach ($_FILES['signed_letters']['name'] as $key => $filename) {
+        if ($_FILES['signed_letters']['error'][$key] !== UPLOAD_ERR_OK) {
+            $error_count++;
+            continue;
         }
 
-        // Definimos la carpeta de destino para los archivos
-        $upload_dir = __DIR__ . '/../../public/uploads/signed_documents/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true); // Creamos la carpeta si no existe
+        $filename_no_ext = pathinfo($filename, PATHINFO_FILENAME);
+        $parts = explode('_', $filename_no_ext);
+        
+        if (count($parts) !== 2) {
+            $error_count++;
+            continue;
         }
 
-        $userModel = new User();
-        require_once(__DIR__ . '/../Models/StudentDocument.php');
-        $docModel = new StudentDocument();
+        $boleta = $parts[0];
+        $doc_code = $parts[1];
 
-        $success_count = 0;
-        $error_count = 0;
+        // ✅ Buscar datos completos del estudiante
+        $student_data = $userModel->getStudentDataByBoleta($boleta);
+        if (!$student_data) {
+            $error_count++;
+            continue;
+        }
 
-        // Iteramos sobre cada archivo subido
-        foreach ($_FILES['signed_letters']['name'] as $key => $filename) {
-            if ($_FILES['signed_letters']['error'][$key] !== UPLOAD_ERR_OK) {
-                $error_count++;
-                continue; // Saltar al siguiente archivo si hay un error de subida
-            }
+        // ✅ USAR FileHelper
+        $upload_dir = FileHelper::getStudentSubfolder(
+            $boleta, 
+            $student_data['first_name'], 
+            $student_data['last_name_p'], 
+            'signed_documents'
+        );
 
-            // 1. Parsear el nombre del archivo para obtener boleta y tipo
-            $filename_no_ext = pathinfo($filename, PATHINFO_FILENAME);
-            $parts = explode('_', $filename_no_ext);
+        $destination = $upload_dir . '/' . $filename;
+        if (move_uploaded_file($_FILES['signed_letters']['tmp_name'][$key], $destination)) {
+            $doc_type = ($doc_code === 'CP') ? 'presentation_letter' : 'unknown';
+            $relative_path = FileHelper::getRelativePath($destination);
             
-            if (count($parts) !== 2) {
-                $error_count++;
-                continue; // Formato de nombre de archivo incorrecto
-            }
-
-            $boleta = $parts[0];
-            $doc_code = $parts[1];
-
-            // 2. Buscar al estudiante por boleta
-            $student_id = $userModel->findStudentIdByBoleta($boleta);
-            if (!$student_id) {
-                $error_count++;
-                continue; // Estudiante no encontrado
-            }
-
-            // 3. Mover el archivo a su destino final
-            $destination = $upload_dir . $filename;
-            if (move_uploaded_file($_FILES['signed_letters']['tmp_name'][$key], $destination)) {
-                // 4. Guardar el registro en la base de datos
-                $doc_type = ($doc_code === 'CP') ? 'presentation_letter' : 'unknown';
-                if ($docModel->create($student_id, $doc_type, 'public/uploads/signed_documents/' . $filename, $filename)) {
-                    $success_count++;
-                    // Aquí iría la lógica para enviar el correo de notificación
-                } else {
-                    $error_count++;
-                    unlink($destination); // Borrar archivo si falla el registro en BD
-                }
+            if ($docModel->create($student_data['id'], $doc_type, $relative_path, $filename)) {
+                $success_count++;
             } else {
                 $error_count++;
+                unlink($destination);
             }
+        } else {
+            $error_count++;
         }
-        
-        // 5. Redirigir con un mensaje de resumen
-        header('Location: /SIEP/public/index.php?action=upisDashboard&status=upload_complete&success=' . $success_count . '&errors=' . $error_count);
-        exit;
     }
+    
+    header('Location: /SIEP/public/index.php?action=upisDashboard&status=upload_complete&success=' . $success_count . '&errors=' . $error_count);
+    exit;
+}
 
     public function completeAccreditation() {
         $this->session->guard(['upis', 'admin']);

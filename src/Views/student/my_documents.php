@@ -44,16 +44,28 @@ $session->guard(['student']);
                     </thead>
                     <tbody>
                         <?php foreach ($myDocuments as $doc): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($doc['original_filename']); ?></td>
-                                <td><?php echo htmlspecialchars(str_replace('_', ' ', ucfirst($doc['document_type']))); ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($doc['uploaded_at'])); ?></td>
-                                <td>
-                                    <!-- Este enlace apunta a la acción de descarga -->
-                                    <a href="/SIEP/public/uploads/signed_documents/<?php echo htmlspecialchars($doc['original_filename']); ?>" class="btn" download>Descargar</a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+    <tr>
+        <td><?php echo htmlspecialchars($doc['original_filename']); ?></td>
+        <td><?php echo htmlspecialchars(str_replace('_', ' ', ucfirst($doc['document_type']))); ?></td>
+        <td><?php echo date('d/m/Y H:i', strtotime($doc['uploaded_at'])); ?></td>
+        <td>
+            <!-- ✅ NUEVO: Descarga segura a través del controlador -->
+            <a href="/SIEP/public/index.php?action=downloadDocument&id=<?php echo $doc['id']; ?>" 
+               class="btn" 
+               style="background-color: #28a745;">
+               📥 Descargar
+            </a>
+            
+            <!-- Opcional: Ver en navegador -->
+            <a href="/SIEP/public/index.php?action=viewDocument&id=<?php echo $doc['id']; ?>" 
+               class="btn" 
+               style="background-color: #007bff;" 
+               target="_blank">
+               👁️ Ver
+            </a>
+        </td>
+    </tr>
+<?php endforeach; ?>
                     </tbody>
                 </table>
             </div>

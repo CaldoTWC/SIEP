@@ -221,6 +221,18 @@ switch ($action) {
         $upisController->downloadHistoryReport();
         break;
 
+    case 'downloadDocument':
+    require_once(__DIR__ . '/../src/Controllers/FileController.php');
+    $fileController = new FileController();
+    $fileController->downloadDocument();
+    break;
+
+case 'viewDocument':
+    require_once(__DIR__ . '/../src/Controllers/FileController.php');
+    $fileController = new FileController();
+    $fileController->viewDocument();
+    break;
+
     // ===================================================================
     // --- RUTAS GENÉRICAS ---
     // ===================================================================
