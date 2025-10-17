@@ -1,5 +1,5 @@
 <?php
-// Archivo: src/Controllers/CompanyController.php (Versión Final y Unificada)
+// Archivo: src/Controllers/CompanyController.php (Versión Final Corregida)
 
 // --- Incluimos TODAS las dependencias que usan los métodos de esta clase ---
 require_once(__DIR__ . '/../Models/Vacancy.php');
@@ -96,7 +96,6 @@ class CompanyController {
         // 1. Proteger la ruta y validar la petición
         $this->session->guard(['company']);
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['student_boleta'])) {
-            // Usamos die() para detener la ejecución y mostrar un error claro en la nueva pestaña.
             die("<h1>Error</h1><p>Solicitud inválida o falta el número de boleta.</p>");
         }
         
@@ -121,10 +120,20 @@ class CompanyController {
         // 4. Creamos el vínculo en la tabla 'company_student_links'
         require_once(__DIR__ . '/../Models/CompanyStudentLink.php');
         $linkModel = new CompanyStudentLink();
-        // Es una buena práctica verificar si el vínculo ya existe para no duplicarlo
-        if (!$linkModel->create($company_profile_id, $student_id)) {
-            // Este error puede ocurrir si se intenta generar la carta dos veces para el mismo alumno
-            die("<h1>Error al Vincular</h1><p>No se pudo crear el vínculo. Es posible que ya exista una relación activa con este estudiante.</p>");
+
+        // Verificar si el vínculo ya existe para no duplicarlo
+        if ($linkModel->existsActiveLink($company_profile_id, $student_id)) {
+            die("<h1>Vínculo Existente</h1><p>Ya existe una relación activa con este estudiante. No es necesario generar la carta nuevamente.</p>");
+        }
+
+        // Configurar las propiedades del objeto antes de crear
+        $linkModel->company_profile_id = $company_profile_id;
+        $linkModel->student_user_id = $student_id;
+        $linkModel->acceptance_date = date('Y-m-d'); // Fecha actual
+
+        // Crear el vínculo
+        if (!$linkModel->create()) {
+            die("<h1>Error al Vincular</h1><p>No se pudo crear el vínculo. Por favor, contacte al administrador.</p>");
         }
 
         // 5. Preparamos los arrays de datos para el generador de PDF
@@ -157,19 +166,15 @@ class CompanyController {
      * @param int $user_id
      * @return int|null
      */
-    private function getCompanyProfileId(int $user_id) { // Quitado ?int para PHP 7.4
+    private function getCompanyProfileId($user_id) {
         $db = Database::getInstance()->getConnection();
-        $query = "SELECT id FROM company_profiles WHERE contact_person_user_id = ? LIMIT 1";
+        $query = "SELECT id FROM company_profiles WHERE contact_person_user_id = :user_id LIMIT 1";
         $stmt = $db->prepare($query);
-        $stmt->bind_param("i", $user_id);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            return $result->fetch_assoc()['id'];
-        } else {
-            return null;
-        }
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? (int)$result['id'] : null;
     }
 
     public function showValidationLetterForm() {
@@ -194,7 +199,7 @@ class CompanyController {
         // Datos de la empresa de la BD
         $company_data = [
             'company_name' => $company_db_data['company_name'],
-            'contact_person_name' => $company_db_data['first_name'] . ' ' . $company_db_data['last_name'],
+            'contact_person_name' => $company_db_data['first_name'] . ' ' . $company_db_data['last_name_p'],
         ];
         
         $docService = new DocumentService();

@@ -332,53 +332,93 @@ class User {
     // ========================================================================
     
     /**
-    * Obtiene el perfil completo de un estudiante para formularios
-    * 
-    * @param int $user_id ID del usuario estudiante
-    * @return array|false Datos del perfil o false
-    */
+     * Obtiene el perfil completo de un estudiante para formularios
+     * 
+     * @param int $user_id ID del usuario estudiante
+     * @return array|false Datos del perfil o false
+     */
     public function getStudentProfileForForm($user_id) {
         $sql = "SELECT 
-                u.id, u.email, u.first_name, u.last_name_p, u.last_name_m,
-                u.phone_number,
-                sp.boleta, sp.career
-            FROM users u
-            JOIN student_profiles sp ON u.id = sp.user_id
-            WHERE u.id = :user_id 
-              AND u.role = 'student'";
-    
+                    u.id, u.email, u.first_name, u.last_name_p, u.last_name_m,
+                    u.phone_number,
+                    CONCAT(u.first_name, ' ', u.last_name_p, ' ', u.last_name_m) as full_name,
+                    sp.boleta, sp.career
+                FROM users u
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE u.id = :user_id 
+                  AND u.role = 'student'";
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         $stmt->execute();
-    
+        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
- * Obtener datos completos de un estudiante por boleta
- * 
- * @param string $boleta
- * @return array|false
- */
-public function getStudentDataByBoleta($boleta) {
-    $sql = "SELECT 
-                u.id,
-                u.first_name,
-                u.last_name_p,
-                u.last_name_m,
-                sp.boleta
-            FROM users u
-            JOIN student_profiles sp ON u.id = sp.user_id
-            WHERE sp.boleta = :boleta
-              AND u.role = 'student'
-            LIMIT 1";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':boleta', $boleta);
-    $stmt->execute();
-    
-    return $stmt->fetch(PDO::FETCH_ASSOC);
-}
+     * Obtiene el perfil completo de una empresa por ID de usuario
+     * 
+     * @param int $user_id ID del usuario empresa
+     * @return array|false Datos del perfil de empresa o false
+     */
+    public function getCompanyProfileByUserId($user_id) {
+        $sql = "SELECT 
+                    u.id, 
+                    u.email, 
+                    u.first_name, 
+                    u.last_name_p, 
+                    u.last_name_m,
+                    u.phone_number,
+                    cp.id as company_profile_id,
+                    cp.company_name, 
+                    cp.commercial_name, 
+                    cp.rfc,
+                    cp.company_description,
+                    cp.business_area, 
+                    cp.company_type, 
+                    cp.website,
+                    cp.tax_id_url,
+                    cp.employee_count,
+                    cp.student_programs,
+                    cp.contact_person_position
+                FROM users u
+                JOIN company_profiles cp ON u.id = cp.contact_person_user_id
+                WHERE u.id = :user_id 
+                  AND u.role = 'company'
+                LIMIT 1";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtener datos completos de un estudiante por boleta
+     * 
+     * @param string $boleta
+     * @return array|false
+     */
+    public function getStudentDataByBoleta($boleta) {
+        $sql = "SELECT 
+                    u.id,
+                    u.first_name,
+                    u.last_name_p,
+                    u.last_name_m,
+                    sp.boleta
+                FROM users u
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE sp.boleta = :boleta
+                  AND u.role = 'student'
+                LIMIT 1";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':boleta', $boleta);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     /**
      * Obtiene datos de empresa para proceso de rechazo
@@ -508,27 +548,26 @@ public function getStudentDataByBoleta($boleta) {
     }
 
     /**
- * Buscar el ID de un estudiante por su número de boleta
- * 
- * @param string $boleta Número de boleta (10 dígitos)
- * @return int|false ID del usuario o false si no se encuentra
- */
-public function findStudentIdByBoleta($boleta) {
-    $sql = "SELECT u.id 
-            FROM users u
-            JOIN student_profiles sp ON u.id = sp.user_id
-            WHERE sp.boleta = :boleta
-              AND u.role = 'student'
-            LIMIT 1";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':boleta', $boleta);
-    $stmt->execute();
-    
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result ? (int)$result['id'] : false;
-}
-
+     * Buscar el ID de un estudiante por su número de boleta
+     * 
+     * @param string $boleta Número de boleta (10 dígitos)
+     * @return int|false ID del usuario o false si no se encuentra
+     */
+    public function findStudentIdByBoleta($boleta) {
+        $sql = "SELECT u.id 
+                FROM users u
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE sp.boleta = :boleta
+                  AND u.role = 'student'
+                LIMIT 1";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':boleta', $boleta);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? (int)$result['id'] : false;
+    }
 
     
     // ========================================================================

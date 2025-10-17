@@ -64,25 +64,25 @@ $session->guard(['upis', 'admin']);
                     <h2>Detalles de: <?php echo htmlspecialchars($company['company_name']); ?></h2>
                     
                     <div class="modal-details">
-                        <h3>Información de la Empresa</h3>
-                        <p><strong>Nombre Comercial:</strong> <?php echo htmlspecialchars($company['commercial_name']); ?></p>
-                        <p><strong>RFC:</strong> <?php echo htmlspecialchars($company['rfc']); ?></p>
-                        <p><strong>Giro:</strong> <?php echo htmlspecialchars($company['business_area']); ?></p>
-                        <p><strong>Tipo:</strong> <?php echo htmlspecialchars($company['company_type']); ?></p>
-                        <p><strong>Descripción:</strong> <?php echo nl2br(htmlspecialchars($company['company_description'])); ?></p>
-                        <p><strong>No. Empleados:</strong> <?php echo htmlspecialchars($company['employee_count']); ?></p>
-                        <p><strong>Programas para Estudiantes:</strong> <?php echo htmlspecialchars($company['student_programs']); ?></p>
-                        
-                        <h3>Información de Contacto</h3>
-                        <p><strong>Nombre Completo:</strong> <?php echo htmlspecialchars($company['first_name'] . ' ' . $company['last_name_p'] . ' ' . $company['last_name_m']); ?></p>
-                        <p><strong>Puesto:</strong> <?php echo htmlspecialchars($company['contact_person_position']); ?></p>
-                        <p><strong>Correo:</strong> <?php echo htmlspecialchars($company['email']); ?></p>
-                        <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($company['phone_number']); ?></p>
+    <h3>Información de la Empresa</h3>
+    <p><strong>Nombre Comercial:</strong> <?php echo htmlspecialchars($company['commercial_name'] ?? 'No disponible'); ?></p>
+    <p><strong>RFC:</strong> <?php echo htmlspecialchars($company['rfc'] ?? 'No disponible'); ?></p>
+    <p><strong>Giro:</strong> <?php echo htmlspecialchars($company['business_area'] ?? 'No disponible'); ?></p>
+    <p><strong>Tipo:</strong> <?php echo htmlspecialchars($company['company_type'] ?? 'No disponible'); ?></p>
+    <p><strong>Descripción:</strong> <?php 
+        echo isset($company['company_description']) && $company['company_description'] !== ''
+            ? nl2br(htmlspecialchars($company['company_description']))
+            : 'No hay descripción registrada.';
+    ?></p>
+    <p><strong>No. Empleados:</strong> <?php echo htmlspecialchars($company['employee_count'] ?? 'No especificado'); ?></p>
+    <p><strong>Programas para Estudiantes:</strong> <?php echo htmlspecialchars($company['student_programs'] ?? 'No registrado'); ?></p>
 
-                        <h3>Enlaces Externos</h3>
-                        <p><strong>Sitio Web:</strong> <a href="<?php echo htmlspecialchars($company['website']); ?>" target="_blank" rel="noopener noreferrer">Visitar Sitio</a></p>
-                        <p><strong>Constancia de Situación Fiscal:</strong> <a href="<?php echo htmlspecialchars($company['tax_id_url']); ?>" target="_blank" rel="noopener noreferrer">Ver Documento</a></p>
-                    </div>
+    <h3>Información de Contacto</h3>
+    <p><strong>Nombre Completo:</strong> <?php echo htmlspecialchars(($company['first_name'] ?? '') . ' ' . ($company['last_name_p'] ?? '') . ' ' . ($company['last_name_m'] ?? '')); ?></p>
+    <p><strong>Puesto:</strong> <?php echo htmlspecialchars($company['contact_person_position'] ?? 'No especificado'); ?></p>
+    <p><strong>Correo:</strong> <?php echo htmlspecialchars($company['email'] ?? 'No disponible'); ?></p>
+    <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($company['phone_number'] ?? 'No disponible'); ?></p>
+</div>
                 </div>
             </div>
         <?php endforeach; ?>
