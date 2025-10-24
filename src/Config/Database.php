@@ -3,25 +3,35 @@
  * Clase Singleton para conexión a base de datos
  * 
  * @package SIEP\Config
- * @version 2.0.0
+ * @version 2.1.0
  */
+
+// Cargar variables de entorno
+require_once __DIR__ . '/env.php';
 
 class Database {
     
     private static $instance = null;
     private $conn;
     
-    // Configuración de conexión
-    private $host = 'localhost';
-    private $db_name = 'siep';
-    private $username = 'root';  // Cambiar según tu configuración
-    private $password = '';      // Cambiar según tu configuración
-    private $charset = 'utf8mb4';
+    // Configuración de conexión desde variables de entorno
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    private $charset;
     
     /**
      * Constructor privado (patrón Singleton)
      */
     private function __construct() {
+        // Leer configuración desde variables de entorno
+        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
+        $this->db_name = $_ENV['DB_NAME'] ?? 'siep';
+        $this->username = $_ENV['DB_USER'] ?? 'root';
+        $this->password = $_ENV['DB_PASS'] ?? '';
+        $this->charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
+        
         try {
             $dsn = "mysql:host={$this->host};dbname={$this->db_name};charset={$this->charset}";
             
