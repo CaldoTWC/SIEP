@@ -1,0 +1,36 @@
+# Variables de entorno (credenciales sensibles)
+.env
+
+# Archivos subidos por usuarios
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Logs
+*.log
+error_log
+debug.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Composer (si usas composer en el futuro)
+/vendor/
+composer.lock
+
+# Archivos temporales de PHP
+*.cache
+*.tmp
+
+# Backups
+*.bak
+*.backup
+*.sql.backup
