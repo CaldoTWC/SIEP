@@ -34,7 +34,7 @@ class Database {
         $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         
         try {
-            $dsn = "mysql:host={".$this->host."};dbname={".$this->db_name."};charset={".$this->charset."}";
+            $dsn = "mysql:host={$this->host};dbname={$this->db_name};charset={$this->charset}";
             
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -45,6 +45,7 @@ class Database {
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
         } catch(PDOException $e) {
+            // Versión de producción (segura)
             error_log("Error de conexión: " . $e->getMessage());
             die("Error de conexión a la base de datos. Por favor, contacte al administrador.");
         }
