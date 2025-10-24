@@ -1,9 +1,9 @@
 # Variables de entorno (credenciales sensibles)
 .env
 
-# Archivos subidos por usuarios
-public/uploads/*
-!public/uploads/.gitkeep
+# Archivos subidos por usuarios (sensibles)
+storage/*
+!storage/.gitkeep
 
 # Logs
 *.log
