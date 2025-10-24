@@ -8,6 +8,7 @@
 
 // Cargar variables de entorno
 require_once __DIR__ . '/env.php';
+load_dotenv(__DIR__ . '/../../.env');
 
 class Database {
     
@@ -26,14 +27,14 @@ class Database {
      */
     private function __construct() {
         // Leer configuración desde variables de entorno
-        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
-        $this->db_name = $_ENV['DB_NAME'] ?? 'siep';
-        $this->username = $_ENV['DB_USER'] ?? 'root';
-        $this->password = $_ENV['DB_PASS'] ?? '';
-        $this->charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
+        $this->host = getenv('DB_HOST') ?: 'localhost';
+        $this->db_name = getenv('DB_NAME') ?: 'siep';
+        $this->username = getenv('DB_USER') ?: 'root';
+        $this->password = getenv('DB_PASS') ?: '';
+        $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
         
         try {
-            $dsn = "mysql:host={$this->host};dbname={$this->db_name};charset={$this->charset}";
+            $dsn = "mysql:host={".$this->host."};dbname={".$this->db_name."};charset={".$this->charset."}";
             
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
