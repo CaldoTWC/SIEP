@@ -3,25 +3,36 @@
  * Clase Singleton para conexión a base de datos
  * 
  * @package SIEP\Config
- * @version 2.0.0
+ * @version 2.1.0
  */
+
+// Cargar variables de entorno
+require_once __DIR__ . '/env.php';
+load_dotenv(__DIR__ . '/../../.env');
 
 class Database {
     
     private static $instance = null;
     private $conn;
     
-    // Configuración de conexión
-    private $host = 'localhost';
-    private $db_name = 'siep';
-    private $username = 'root';  // Cambiar según tu configuración
-    private $password = '';      // Cambiar según tu configuración
-    private $charset = 'utf8mb4';
+    // Configuración de conexión desde variables de entorno
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    private $charset;
     
     /**
      * Constructor privado (patrón Singleton)
      */
     private function __construct() {
+        // Leer configuración desde variables de entorno
+        $this->host = getenv('DB_HOST') ?: 'localhost';
+        $this->db_name = getenv('DB_NAME') ?: 'siep';
+        $this->username = getenv('DB_USER') ?: 'root';
+        $this->password = getenv('DB_PASS') ?: '';
+        $this->charset = getenv('DB_CHARSET') ?: 'utf8mb4';
+        
         try {
             $dsn = "mysql:host={$this->host};dbname={$this->db_name};charset={$this->charset}";
             
@@ -34,6 +45,7 @@ class Database {
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
         } catch(PDOException $e) {
+            // Versión de producción (segura)
             error_log("Error de conexión: " . $e->getMessage());
             die("Error de conexión a la base de datos. Por favor, contacte al administrador.");
         }
