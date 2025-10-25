@@ -562,14 +562,3 @@ Referencia rápida por archivo (métodos principales):
 - Mailer: `src/Lib/Mailer.php` → `mailer_send()`
 
 ---
-
-Si quieres que convierta esto en `README.md` del repo (push a `main`) o lo separe en varios documentos (README + README_TECHNICAL.md + MIGRATIONS.md), lo hago.  
-También puedo generar:
-- Diagrama PlantUML del ER y del flujo de carta de aceptación (archivo `.puml`) para renderizar imágenes fuera del repo.
-- PR con los cambios finales y un checklist de QA para validar en staging.
-
-¿Deseas que:
-- empuje este README a la rama `feature/env-accreditation-notifications`? (o a `main`)
-- genere los archivos PlantUML del ER y del flujo de carta de aceptación ahora?
-```
-```
