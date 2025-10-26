@@ -91,82 +91,124 @@ class UpisController {
     // ========================================================================
 
     /**
-     * Aprueba una empresa (cambia status de 'pending' a 'active')
-     */
-    public function approveCompany() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $company_id = $_GET['id'] ?? null;
+ * Aprueba una empresa (cambia status de 'pending' a 'active')
+ */
+public function approveCompany() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $company_id = (int)$_POST['company_id'];
+        $comments = trim($_POST['comments'] ?? '');
         
         if ($company_id) {
             $userModel = new User();
             
-            if ($userModel->approveUser((int)$company_id)) {
-                header('Location: /SIEP/public/index.php?action=reviewCompanies&status=approved');
+            if ($userModel->approveUser($company_id)) {
+                
+                // ========================================
+                // 🆕 ENVIAR NOTIFICACIÓN A LA EMPRESA
+                // ========================================
+                
+                require_once(__DIR__ . '/../Services/EmailService.php');
+                $emailService = new EmailService();
+                
+                // Obtener datos de la empresa
+                $company = $userModel->findById($company_id);
+                $company_profile = $userModel->getCompanyProfileByUserId($company_id);
+                
+                $company_data = [
+                    'user_id' => $company_id,
+                    'contact_name' => $company['first_name'] . ' ' . 
+                                     $company['last_name_p'] . ' ' . 
+                                     $company['last_name_m'],
+                    'company_name' => $company_profile['company_name'] ?? 'N/A',
+                    'rfc' => $company_profile['rfc'] ?? 'N/A',
+                    'email' => $company['email']
+                ];
+                
+                // Enviar notificación de aprobación
+                $emailService->notifyCompanyStatus($company_data, 'approved', $comments);
+                
+                // ========================================
+                // FIN DE NOTIFICACIONES
+                // ========================================
+                
+                $_SESSION['success'] = "Empresa aprobada correctamente y notificada por email.";
+                header('Location: /SIEP/public/index.php?action=reviewCompanies');
                 exit;
             }
         }
-        
-        header('Location: /SIEP/public/index.php?action=reviewCompanies&status=error');
-        exit;
     }
     
-    /**
-     * Rechaza una empresa
-     * 
-     * VERSIÓN ACTUAL: Solo marca como 'inactive'
-     * VERSIÓN FUTURA (PINEADA): Eliminar + enviar email + blacklist
-     */
-    public function rejectCompany() {
-        $this->session->guard(['upis', 'admin']);
+    $_SESSION['error'] = "Error al aprobar la empresa.";
+    header('Location: /SIEP/public/index.php?action=reviewCompanies');
+    exit;
+}
+
+/**
+ * Rechaza una empresa (cambia status de 'pending' a 'rejected')
+ */
+public function rejectCompany() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $company_id = (int)$_POST['company_id'];
+        $comments = trim($_POST['comments'] ?? '');
         
-        $company_id = $_GET['id'] ?? null;
-        
-        if ($company_id) {
-            $userModel = new User();
-            
-            // VERSIÓN ACTUAL: Solo cambia status a 'inactive'
-            if ($userModel->rejectUser((int)$company_id)) {
-                header('Location: /SIEP/public/index.php?action=reviewCompanies&status=rejected');
-                exit;
-            }
-            
-            /* ============================================================
-             * VERSIÓN FUTURA CON EMAIL Y BLACKLIST (PINEADA):
-             * ============================================================
-             * 
-             * $rejection_reason = $_POST['rejection_reason'] ?? 'No especificado';
-             * 
-             * // 1. Obtener datos antes de eliminar
-             * $company_data = $userModel->getCompanyDataForRejection((int)$company_id);
-             * 
-             * // 2. Agregar a blacklist
-             * $blacklist_result = $userModel->addOrUpdateBlacklist(
-             *     $company_data['email'],
-             *     $company_data['company_name'],
-             *     $rejection_reason,
-             *     $_SESSION['user_id']
-             * );
-             * 
-             * // 3. Enviar email
-             * $emailService = new EmailService();
-             * $emailService->sendCompanyRejectionEmail(
-             *     $company_data['email'],
-             *     $company_data['company_name'],
-             *     $rejection_reason,
-             *     $blacklist_result['rejection_count'],
-             *     $blacklist_result['is_banned']
-             * );
-             * 
-             * // 4. Eliminar de BD
-             * $userModel->deleteCompany((int)$company_id);
-             * 
-             * ============================================================ */
+        if (empty($company_id)) {
+            $_SESSION['error'] = "ID de empresa inválido.";
+            header('Location: /SIEP/public/index.php?action=reviewCompanies');
+            exit;
         }
         
-        header('Location: /SIEP/public/index.php?action=reviewCompanies&status=error');
-        exit;
+        if (empty($comments)) {
+            $_SESSION['error'] = "Debes proporcionar una razón para el rechazo.";
+            header('Location: /SIEP/public/index.php?action=reviewCompanies');
+            exit;
+        }
+        
+        $userModel = new User();
+        
+        if ($userModel->rejectUser($company_id)) {
+            
+            // ========================================
+            // 🆕 ENVIAR NOTIFICACIÓN A LA EMPRESA
+            // ========================================
+            
+            require_once(__DIR__ . '/../Services/EmailService.php');
+            $emailService = new EmailService();
+            
+            // Obtener datos de la empresa
+            $company = $userModel->findById($company_id);
+            $company_profile = $userModel->getCompanyProfileByUserId($company_id);
+            
+            $company_data = [
+                'user_id' => $company_id,
+                'contact_name' => $company['first_name'] . ' ' . 
+                                 $company['last_name_p'] . ' ' . 
+                                 $company['last_name_m'],
+                'company_name' => $company_profile['company_name'] ?? 'N/A',
+                'rfc' => $company_profile['rfc'] ?? 'N/A',
+                'email' => $company['email']
+            ];
+            
+            // Enviar notificación de rechazo con comentarios
+            $emailService->notifyCompanyStatus($company_data, 'rejected', $comments);
+            
+            // ========================================
+            // FIN DE NOTIFICACIONES
+            // ========================================
+            
+            $_SESSION['success'] = "Empresa rechazada y notificada por email.";
+            header('Location: /SIEP/public/index.php?action=reviewCompanies');
+            exit;
+        }
     }
+    
+    $_SESSION['error'] = "Error al rechazar la empresa.";
+    header('Location: /SIEP/public/index.php?action=reviewCompanies');
+    exit;
+}
 
     public function approveVacancy() {
         $this->session->guard(['upis', 'admin']); // <-- CORREGIDO
@@ -353,41 +395,173 @@ class UpisController {
     exit;
 }
 
-    public function completeAccreditation() {
-        $this->session->guard(['upis', 'admin']);
+    // ========================================================================
+// ACCIONES DE GESTIÓN DE ACREDITACIONES
+// ========================================================================
 
-        $submission_id = $_GET['id'] ?? null;
-        if (!$submission_id) { die("ID de la entrega no proporcionado."); }
+/**
+ * Vista de revisión de acreditaciones pendientes
+ */
+public function reviewAccreditations() {
+    $this->session->guard(['upis', 'admin']);
+    
+    require_once(__DIR__ . '/../Models/Accreditation.php');
+    $accreditationModel = new Accreditation();
+    $pendingAccreditations = $accreditationModel->getPendingSubmissions();
+    
+    require_once(__DIR__ . '/../Views/upis/review_accreditations.php');
+}
 
-        // --- 1. Obtener los datos del estudiante de esta entrega ---
-        // (Necesitamos un método para obtener una submission por su ID)
-        $accreditationModel = new Accreditation();
-        $submission_data = $accreditationModel->getSubmissionById((int)$submission_id); // Lo crearemos ahora
-        
-        if (!$submission_data) { die("Entrega no encontrada."); }
-        
-        // --- 2. Obtener la fecha de la solicitud de la carta ---
-        $applicationModel = new DocumentApplication();
-        $letter_date = $applicationModel->getRequestDateByStudentId($submission_data['student_user_id']);
-
-        // --- 3. Crear el registro histórico ---
-        require_once(__DIR__ . '/../Models/CompletedProcess.php');
-        $completedModel = new CompletedProcess();
-        $student_full_name = $submission_data['first_name'] . ' ' . $submission_data['last_name'];
-
-        if ($completedModel->create($submission_data['student_user_id'], $student_full_name, $submission_data['boleta'], $letter_date)) {
-            // --- 4. Si el registro histórico se creó, eliminamos la solicitud pendiente ---
-            if ($accreditationModel->deleteSubmission((int)$submission_id)) {
-                header('Location: /SIEP/public/index.php?action=upisDashboard&status=accreditation_completed');
-            } else {
-                // Error crítico: se creó el histórico pero no se borró el pendiente
-                header('Location: /SIEP/public/index.php?action=upisDashboard&status=critical_error');
-            }
-        } else {
-            header('Location: /SIEP/public/index.php?action=upisDashboard&status=error');
-        }
+/**
+ * Vista detallada de una acreditación
+ */
+public function reviewAccreditation() {
+    $this->session->guard(['upis', 'admin']);
+    
+    $submission_id = (int)($_GET['id'] ?? 0);
+    
+    if (!$submission_id) {
+        $_SESSION['error'] = "ID de solicitud inválido.";
+        header('Location: /SIEP/public/index.php?action=upisDashboard');
         exit;
     }
+    
+    require_once(__DIR__ . '/../Models/Accreditation.php');
+    $accreditationModel = new Accreditation();
+    $submission = $accreditationModel->getById($submission_id);
+    
+    if (!$submission) {
+        $_SESSION['error'] = "Solicitud no encontrada.";
+        header('Location: /SIEP/public/index.php?action=upisDashboard');
+        exit;
+    }
+    
+    require_once(__DIR__ . '/../Views/upis/review_accreditation.php');
+}
+
+/**
+ * Aprobar solicitud de acreditación
+ */
+public function approveAccreditation() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = "Método no permitido.";
+        header('Location: /SIEP/public/index.php?action=upisDashboard');
+        exit;
+    }
+    
+    $submission_id = (int)$_POST['submission_id'];
+    $comments = trim($_POST['comments'] ?? '');
+    
+    if (empty($submission_id)) {
+        $_SESSION['error'] = "ID de solicitud inválido.";
+        header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+        exit;
+    }
+    
+    require_once(__DIR__ . '/../Models/Accreditation.php');
+    $accreditationModel = new Accreditation();
+    $submission = $accreditationModel->getById($submission_id);
+    
+    if (!$submission) {
+        $_SESSION['error'] = "Solicitud no encontrada.";
+        header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+        exit;
+    }
+    
+    // Actualizar estado
+    if ($accreditationModel->updateStatus($submission_id, 'approved')) {
+        
+        // Enviar notificación al estudiante
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        $student_data = [
+            'user_id' => $submission['student_user_id'],
+            'full_name' => $submission['first_name'] . ' ' . 
+                           $submission['last_name_p'] . ' ' . 
+                           $submission['last_name_m'],
+            'boleta' => $submission['boleta'],
+            'career' => $submission['career'],
+            'email' => $submission['email']
+        ];
+        
+        $emailService->notifyStudentAccreditationStatus($student_data, 'approved', $comments);
+        
+        $_SESSION['success'] = "Solicitud aprobada y estudiante notificado.";
+    } else {
+        $_SESSION['error'] = "Error al aprobar la solicitud.";
+    }
+    
+    header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+    exit;
+}
+
+/**
+ * Rechazar solicitud de acreditación
+ */
+public function rejectAccreditation() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = "Método no permitido.";
+        header('Location: /SIEP/public/index.php?action=upisDashboard');
+        exit;
+    }
+    
+    $submission_id = (int)$_POST['submission_id'];
+    $comments = trim($_POST['comments'] ?? '');
+    
+    if (empty($submission_id)) {
+        $_SESSION['error'] = "ID de solicitud inválido.";
+        header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+        exit;
+    }
+    
+    if (empty($comments)) {
+        $_SESSION['error'] = "Debes proporcionar una razón para el rechazo.";
+        header('Location: /SIEP/public/index.php?action=reviewAccreditation&id=' . $submission_id);
+        exit;
+    }
+    
+    require_once(__DIR__ . '/../Models/Accreditation.php');
+    $accreditationModel = new Accreditation();
+    $submission = $accreditationModel->getById($submission_id);
+    
+    if (!$submission) {
+        $_SESSION['error'] = "Solicitud no encontrada.";
+        header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+        exit;
+    }
+    
+    // Actualizar estado
+    if ($accreditationModel->updateStatus($submission_id, 'rejected')) {
+        
+        // Enviar notificación al estudiante con comentarios
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        $student_data = [
+            'user_id' => $submission['student_user_id'],
+            'full_name' => $submission['first_name'] . ' ' . 
+                           $submission['last_name_p'] . ' ' . 
+                           $submission['last_name_m'],
+            'boleta' => $submission['boleta'],
+            'career' => $submission['career'],
+            'email' => $submission['email']
+        ];
+        
+        $emailService->notifyStudentAccreditationStatus($student_data, 'rejected', $comments);
+        
+        $_SESSION['success'] = "Solicitud rechazada y estudiante notificado.";
+    } else {
+        $_SESSION['error'] = "Error al rechazar la solicitud.";
+    }
+    
+    header('Location: /SIEP/public/index.php?action=reviewAccreditations');
+    exit;
+}
 
     public function showHistory() {
         $this->session->guard(['upis', 'admin']);

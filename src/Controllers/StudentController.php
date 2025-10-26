@@ -166,6 +166,41 @@ public function submitAccreditation() {
     $accreditationModel = new Accreditation();
 
     if ($accreditationModel->createSubmission($student_id, $report_path, $letter_path)) {
+        
+        // ========================================
+        // 🆕 ENVIAR NOTIFICACIONES POR EMAIL
+        // ========================================
+        
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        // Preparar datos para emails
+        $student_data = [
+            'user_id' => $student_id,
+            'full_name' => $profile['first_name'] . ' ' . 
+                           $profile['last_name_p'] . ' ' . 
+                           $profile['last_name_m'],
+            'boleta' => $profile['boleta'],
+            'career' => $profile['career'],
+            'email' => $profile['email']
+        ];
+        
+        $submission_data = [
+            'id' => $accreditationModel->getLastInsertId(),
+            'company_name' => $_POST['company_name'] ?? 'No especificada',
+            'start_date' => $_POST['start_date'] ?? date('Y-m-d'),
+            'end_date' => $_POST['end_date'] ?? date('Y-m-d'),
+            'created_at' => date('Y-m-d H:i:s'),
+            'review_url' => getenv('SITE_URL') . '/index.php?action=reviewAccreditation&id=' . $accreditationModel->getLastInsertId()
+        ];
+        
+        // Enviar confirmación al estudiante
+        $emailService->notifyStudentAccreditationReceived($student_data, $submission_data);
+        
+        // ========================================
+        // FIN DE NOTIFICACIONES
+        // ========================================
+        
         header('Location: /SIEP/public/index.php?action=studentDashboard&status=accreditation_sent');
     } else {
         header('Location: /SIEP/public/index.php?action=studentDashboard&status=upload_error');

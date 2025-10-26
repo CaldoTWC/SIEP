@@ -65,47 +65,67 @@ class AuthController {
     }
 
     public function registerCompany() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo "Método no permitido.";
-            return;
-        }
-
-        // Validación (simple por ahora)
-        if (empty($_POST['email']) || empty($_POST['password']) || empty($_POST['company_name'])) {
-            // Podríamos añadir una validación más robusta como en el registro de estudiantes
-            echo "Faltan campos obligatorios.";
-            return;
-        }
-        
-        $companyUser = new User();
-
-        // Datos del usuario de contacto
-        $companyUser->email = $_POST['email'];
-        $companyUser->password = $_POST['password'];
-        $companyUser->first_name = $_POST['first_name'];
-        $companyUser->last_name_p = $_POST['last_name_p'];
-        $companyUser->last_name_m = $_POST['last_name_m'];
-        $companyUser->phone_number = $_POST['phone_number'];
-        
-        // --- NUEVOS DATOS DEL PERFIL DE LA EMPRESA ---
-        $companyUser->company_name = trim($_POST['company_name']);
-        $companyUser->commercial_name = trim($_POST['commercial_name']);
-        $companyUser->rfc = trim($_POST['rfc']); // <-- Nuevo
-        $companyUser->company_description = trim($_POST['company_description']); // <-- Nuevo
-        $companyUser->business_area = trim($_POST['business_area']);
-        $companyUser->company_type = trim($_POST['company_type']);
-        $companyUser->website = trim($_POST['website']);
-        $companyUser->tax_id_url = trim($_POST['tax_id_url']);
-        $companyUser->employee_count = $_POST['employee_count'];
-        $companyUser->student_programs = isset($_POST['student_programs']) ? implode(', ', $_POST['student_programs']) : 'No especificado';
-        $companyUser->contact_person_position = trim($_POST['contact_person_position']);
-         // <-- Nuevo
-        if ($companyUser->createCompany()) {
-            require_once(__DIR__ . '/../Views/auth/register_company_success.php');
-        } else {
-            echo "<h1>Error en el Registro</h1> <p>Hubo un error durante el registro. El correo ya podría estar en uso.</p>";
-        }
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo "Método no permitido.";
+        return;
     }
+
+    // Validación (simple por ahora)
+    if (empty($_POST['email']) || empty($_POST['password']) || empty($_POST['company_name'])) {
+        // Podríamos añadir una validación más robusta como en el registro de estudiantes
+        echo "Faltan campos obligatorios.";
+        return;
+    }
+    
+    $companyUser = new User();
+
+    // Datos del usuario de contacto
+    $companyUser->email = $_POST['email'];
+    $companyUser->password = $_POST['password'];
+    $companyUser->first_name = $_POST['first_name'];
+    $companyUser->last_name_p = $_POST['last_name_p'];
+    $companyUser->last_name_m = $_POST['last_name_m'];
+    $companyUser->phone_number = $_POST['phone_number'];
+    
+    // Datos del perfil de la empresa
+    $companyUser->company_name = trim($_POST['company_name']);
+    $companyUser->commercial_name = trim($_POST['commercial_name']);
+    $companyUser->rfc = trim($_POST['rfc']);
+    $companyUser->company_address = trim($_POST['company_address']);
+    $companyUser->company_sector = $_POST['company_sector'];
+    $companyUser->company_size = $_POST['company_size'];
+    
+    if ($companyUser->createCompany()) {
+        
+        // ========================================
+        // 🆕 ENVIAR NOTIFICACIÓN DE CONFIRMACIÓN
+        // ========================================
+        
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        // Preparar datos para el email
+        $company_data = [
+            'user_id' => $companyUser->conn->lastInsertId(), // ID del usuario recién creado
+            'contact_name' => $_POST['first_name'] . ' ' . $_POST['last_name_p'] . ' ' . $_POST['last_name_m'],
+            'company_name' => $_POST['company_name'],
+            'rfc' => $_POST['rfc'],
+            'email' => $_POST['email'],
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+        
+        // Enviar confirmación a la empresa
+        $emailService->notifyCompanyRegistered($company_data);
+        
+        // ========================================
+        // FIN DE NOTIFICACIONES
+        // ========================================
+        
+        require_once(__DIR__ . '/../Views/auth/register_success_company.php');
+    } else {
+        echo "Error: El correo electrónico o el RFC ya están registrados en el sistema.";
+    }
+}
 
     public function showRegisterForm() {
         // Esta función simplemente carga la vista del formulario
