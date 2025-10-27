@@ -222,17 +222,23 @@ switch ($action) {
         break;
     
     // Gestión de plantillas (UPIS)
-case 'manageTemplates':
-    $upisController->manageTemplates();
-    break;
+    case 'manageTemplates':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->manageTemplates();
+        break;
 
-case 'uploadTemplate':
-    $upisController->uploadTemplate();
-    break;
+    case 'uploadTemplate':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->uploadTemplate();
+        break;
 
-case 'resetLetterCounters':
-    $upisController->resetLetterCounters();
-    break;
+    case 'resetLetterCounters':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->resetLetterCounters();
+        break;
 
     case 'downloadDocument':
     require_once(__DIR__ . '/../src/Controllers/FileController.php');

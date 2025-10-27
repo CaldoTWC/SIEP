@@ -1,6 +1,7 @@
 <?php
 // Archivo: src/Views/upis/manage_templates.php
 // Vista para gestionar plantillas de cartas de presentación
+// VERSIÓN 2.0: Contador global unificado
 
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
@@ -51,6 +52,35 @@ $session->guard(['upis', 'admin']);
 
         .info-box strong {
             color: #0c5460;
+        }
+
+        .global-counter-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .global-counter-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .global-counter-card .counter-number {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .global-counter-card .period {
+            font-size: 24px;
+            opacity: 0.95;
+            margin-top: 10px;
         }
 
         .templates-grid {
@@ -154,13 +184,6 @@ $session->guard(['upis', 'admin']);
             font-size: 13px;
         }
 
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
         .btn {
             padding: 12px 24px;
             border: none;
@@ -257,6 +280,19 @@ $session->guard(['upis', 'admin']);
             color: #856404;
             margin-top: 0;
         }
+
+        .same-template-notice {
+            background: #e7f3ff;
+            border: 2px solid #004a99;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .same-template-notice h3 {
+            color: #004a99;
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -265,7 +301,7 @@ $session->guard(['upis', 'admin']);
 
         <div class="page-header">
             <h1>🎨 Gestión de Plantillas de Cartas de Presentación</h1>
-            <p>Administra las plantillas PDF y configura el periodo académico actual</p>
+            <p>Administra la plantilla PDF y configura el periodo académico actual</p>
         </div>
 
         <?php if (isset($_GET['status'])): ?>
@@ -283,7 +319,7 @@ $session->guard(['upis', 'admin']);
                 </div>
             <?php elseif ($_GET['status'] === 'counters_reset'): ?>
                 <div class="alert alert-success">
-                    ✅ <strong>¡Contadores reiniciados!</strong> Todos los contadores de numeración han sido reiniciados a 0.
+                    ✅ <strong>¡Contador reiniciado!</strong> El contador global de numeración ha sido reiniciado a 0.
                 </div>
             <?php elseif ($_GET['status'] === 'invalid_file'): ?>
                 <div class="alert alert-error">
@@ -298,18 +334,42 @@ $session->guard(['upis', 'admin']);
 
         <div class="info-box">
             <strong>ℹ️ Información importante:</strong><br>
-            El sistema maneja 4 tipos de cartas de presentación:
+            El sistema maneja 4 tipos de cartas de presentación que se generan dinámicamente sobre la misma plantilla:
             <ul style="margin: 10px 0;">
                 <li><strong>Normal:</strong> Sin destinatario específico, sin mención de horas</li>
                 <li><strong>Normal con Horas:</strong> Sin destinatario, con mención de 200 horas</li>
                 <li><strong>Con Destinatario:</strong> Con destinatario específico, sin horas</li>
                 <li><strong>Con Destinatario y Horas:</strong> Con destinatario y 200 horas</li>
             </ul>
-            <strong>📌 Nota:</strong> Por ahora, todas las variantes usan la misma plantilla física. El contenido se ajusta dinámicamente según la configuración de cada solicitud.
         </div>
 
-        <!-- Estado actual de las plantillas -->
-        <h2 style="color: #004a99; margin-bottom: 20px;">📊 Estado Actual de las Plantillas</h2>
+        <div class="same-template-notice">
+            <h3>📄 Plantilla Única</h3>
+            <p style="margin: 10px 0; color: #495057;">
+                <strong>Todas las variantes de carta usan el mismo archivo PDF:</strong> <code>Plantilla_CP.pdf</code>
+            </p>
+            <p style="margin: 10px 0; color: #495057;">
+                El contenido (destinatario, horas, etc.) se agrega dinámicamente sobre la plantilla según la configuración de cada solicitud.
+            </p>
+        </div>
+
+        <!-- Contador Global -->
+        <?php 
+        $global_counter = isset($templates[0]['global_letter_counter']) ? $templates[0]['global_letter_counter'] : 0;
+        $current_period = isset($templates[0]['academic_period']) ? $templates[0]['academic_period'] : '2025/2';
+        ?>
+        
+        <div class="global-counter-card">
+            <h2>📊 CONTADOR GLOBAL DE OFICIOS</h2>
+            <div class="counter-number"><?= $global_counter ?></div>
+            <p style="margin: 0; font-size: 16px; opacity: 0.9;">
+                Cartas de presentación generadas
+            </p>
+            <div class="period">Periodo: <?= htmlspecialchars($current_period) ?></div>
+        </div>
+
+        <!-- Estado de las 4 variantes -->
+        <h2 style="color: #004a99; margin-bottom: 20px;">📋 Variantes de Cartas Configuradas</h2>
         
         <div class="templates-grid">
             <?php foreach ($templates as $template): ?>
@@ -317,17 +377,13 @@ $session->guard(['upis', 'admin']);
                     <h3><?= htmlspecialchars($template['template_name']) ?></h3>
                     
                     <div class="template-info">
-                        <strong>Tipo:</strong> <?= htmlspecialchars($template['template_type']) ?>
+                        <strong>Código:</strong> <code><?= htmlspecialchars($template['template_type']) ?></code>
                     </div>
                     
                     <div class="template-info">
                         <strong>Periodo:</strong> <?= htmlspecialchars($template['academic_period']) ?>
                     </div>
-                    
-                    <div class="template-info">
-                        <strong>Cartas generadas:</strong> <?= $template['current_letter_number'] ?>
-                    </div>
-                    
+            
                     <div class="template-info">
                         <strong>Archivo:</strong><br>
                         <code style="font-size: 11px; color: #6c757d;">
@@ -345,7 +401,7 @@ $session->guard(['upis', 'admin']);
                     </div>
                     
                     <?php if ($template['updated_at']): ?>
-                        <div class="template-info" style="font-size: 12px; margin-top: 10px;">
+                        <div class="template-info" style="font-size: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
                             <strong>Última actualización:</strong><br>
                             <?= date('d/m/Y H:i', strtotime($template['updated_at'])) ?>
                         </div>
@@ -357,6 +413,10 @@ $session->guard(['upis', 'admin']);
         <!-- Formulario para actualizar plantilla -->
         <div class="update-form">
             <h2>📤 Actualizar Plantilla y Periodo Académico</h2>
+            
+            <div class="alert alert-warning" style="margin-bottom: 20px;">
+                <strong>⚠️ Importante:</strong> El archivo que subas se renombrará automáticamente a <code>Plantilla_CP.pdf</code> y reemplazará la plantilla actual para todas las variantes de carta.
+            </div>
             
             <form method="POST" action="/SIEP/public/index.php?action=uploadTemplate" enctype="multipart/form-data" id="uploadForm">
                 
@@ -370,7 +430,7 @@ $session->guard(['upis', 'admin']);
                         name="academic_period"
                         placeholder="Ej: 2025/2"
                         pattern="\d{4}/[12]"
-                        value="<?= htmlspecialchars($templates[0]['academic_period'] ?? '2025/2') ?>"
+                        value="<?= htmlspecialchars($current_period) ?>"
                         required
                     >
                     <small>
@@ -392,8 +452,8 @@ $session->guard(['upis', 'admin']);
                     >
                     <small>
                         📄 Solo archivos PDF | Tamaño máximo: 10 MB<br>
-                        <strong>⚠️ Importante:</strong> Este archivo reemplazará la plantilla actual para TODAS las variantes.<br>
-                        El contenido (destinatario, horas) se agregará dinámicamente sobre la plantilla.
+                        <strong>📌 El archivo se renombrará automáticamente a:</strong> <code>Plantilla_CP.pdf</code><br>
+                        Se creará un backup de la plantilla anterior con la fecha actual.
                     </small>
                 </div>
 
@@ -409,17 +469,17 @@ $session->guard(['upis', 'admin']);
         <div class="reset-section">
             <h3>⚠️ Zona de Administración Avanzada</h3>
             <p style="color: #856404; margin-bottom: 20px;">
-                <strong>Atención:</strong> Las siguientes acciones afectan el sistema de numeración de las cartas.
+                <strong>Atención:</strong> La siguiente acción reinicia el contador global de numeración de cartas.
             </p>
 
             <form method="POST" action="/SIEP/public/index.php?action=resetLetterCounters" 
-                  onsubmit="return confirm('⚠️ ¿Estás seguro de reiniciar TODOS los contadores de numeración? Esta acción no se puede deshacer.\n\nSolo hazlo al inicio de un nuevo periodo académico.');"
+                  onsubmit="return confirm('⚠️ ¿Estás seguro de reiniciar el contador global de numeración?\n\nEl contador actual es: <?= $global_counter ?>\n\nSe reiniciará a 0 y la próxima carta será No. 01-<?= $current_period ?>\n\nEsta acción no se puede deshacer.\n\n✅ Solo hazlo al inicio de un nuevo periodo académico.');"
                   style="margin-top: 15px;">
                 <button type="submit" class="btn btn-danger btn-block">
-                    🔄 Reiniciar Contadores de Numeración (Inicio de Periodo)
+                    🔄 Reiniciar Contador Global (Inicio de Periodo)
                 </button>
                 <small style="display: block; margin-top: 10px; color: #856404;">
-                    Reinicia a 0 los contadores de numeración de todas las plantillas.<br>
+                    Reinicia a 0 el contador global de numeración compartido por todas las variantes.<br>
                     <strong>Solo usar al inicio de un nuevo periodo escolar.</strong>
                 </small>
             </form>
@@ -450,10 +510,11 @@ $session->guard(['upis', 'admin']);
                     return;
                 }
 
-                // Mostrar confirmación
+                // Mostrar info del archivo
                 const fileName = file.name;
                 const fileSize = (file.size / 1024).toFixed(2);
                 console.log(`✅ Archivo seleccionado: ${fileName} (${fileSize} KB)`);
+                console.log('⚠️ Se renombrará a: Plantilla_CP.pdf');
             }
         });
 
@@ -482,12 +543,24 @@ $session->guard(['upis', 'admin']);
             const confirmed = confirm(
                 `¿Confirmas actualizar la plantilla?\n\n` +
                 `Nuevo periodo: ${period}\n` +
-                `Archivo: ${file.name}\n` +
+                `Archivo original: ${file.name}\n` +
+                `Se renombrará a: Plantilla_CP.pdf\n` +
                 `Tamaño: ${(file.size / 1024).toFixed(2)} KB\n\n` +
-                `Esta plantilla se usará para todas las cartas de presentación.`
+                `⚠️ La plantilla actual se respaldará automáticamente.\n\n` +
+                `Esta plantilla se usará para TODAS las cartas de presentación.`
             );
 
-            return confirmed;
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Deshabilitar botón para evitar doble envío
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Subiendo plantilla...';
+
+            return true;
         });
     </script>
 </body>
