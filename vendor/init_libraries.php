@@ -12,14 +12,15 @@
 // ============================================
 // PHPMAILER - Envío de correos electrónicos
 // ============================================
+// ============================================
+// PHPMAILER - Envío de correos electrónicos
+// ============================================
 if (file_exists(__DIR__ . '/phpmailer/src/PHPMailer.php')) {
     require_once __DIR__ . '/phpmailer/src/Exception.php';
     require_once __DIR__ . '/phpmailer/src/PHPMailer.php';
     require_once __DIR__ . '/phpmailer/src/SMTP.php';
-    require_once __DIR__ . '/phpmailer/src/POP3.php';
-    require_once __DIR__ . '/phpmailer/src/OAuth.php';
+    // NO cargar OAuth.php ni POP3.php (requieren dependencias adicionales)
 }
-
 // ============================================
 // TCPDF - Generación de PDFs avanzada
 // ============================================
