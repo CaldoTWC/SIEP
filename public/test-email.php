@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../src/Config/env.php';
 load_dotenv(__DIR__ . '/../.env');
 
-require_once __DIR__ . '/../vendor/init_libraries.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/Config/email.php';
 
 echo "<h2>🧪 Prueba de Conexión SMTP con Outlook (PHPMailer)</h2>";

@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
 // Cargar librerías externas (Composer)
-require_once __DIR__ . '/../../vendor/init_libraries.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Cargar variables de entorno
 require_once __DIR__ . '/env.php';
