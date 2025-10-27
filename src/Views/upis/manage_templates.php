@@ -1,7 +1,7 @@
 <?php
 // Archivo: src/Views/upis/manage_templates.php
 // Vista para gestionar plantillas de cartas de presentación
-// VERSIÓN 2.0: Contador global unificado
+// VERSIÓN 2.0: Contador global unificado - Sin backup automático
 
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
@@ -415,7 +415,8 @@ $session->guard(['upis', 'admin']);
             <h2>📤 Actualizar Plantilla y Periodo Académico</h2>
             
             <div class="alert alert-warning" style="margin-bottom: 20px;">
-                <strong>⚠️ Importante:</strong> El archivo que subas se renombrará automáticamente a <code>Plantilla_CP.pdf</code> y reemplazará la plantilla actual para todas las variantes de carta.
+                <strong>⚠️ Importante:</strong> El archivo que subas se renombrará automáticamente a <code>Plantilla_CP.pdf</code> y <strong>sobrescribirá</strong> la plantilla actual para todas las variantes de carta.<br>
+                <strong>📌 Asegúrate de tener un respaldo local antes de subir.</strong>
             </div>
             
             <form method="POST" action="/SIEP/public/index.php?action=uploadTemplate" enctype="multipart/form-data" id="uploadForm">
@@ -453,12 +454,12 @@ $session->guard(['upis', 'admin']);
                     <small>
                         📄 Solo archivos PDF | Tamaño máximo: 10 MB<br>
                         <strong>📌 El archivo se renombrará automáticamente a:</strong> <code>Plantilla_CP.pdf</code><br>
-                        Se creará un backup de la plantilla anterior con la fecha actual.
+                        ⚠️ La plantilla actual será <strong>reemplazada</strong>. Asegúrate de tener un respaldo.
                     </small>
                 </div>
 
                 <div class="actions">
-                    <button type="submit" class="btn btn-primary btn-block">
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
                         📤 Actualizar Plantilla y Periodo
                     </button>
                 </div>
@@ -541,12 +542,13 @@ $session->guard(['upis', 'admin']);
             }
 
             const confirmed = confirm(
-                `¿Confirmas actualizar la plantilla?\n\n` +
+                `⚠️ ¿CONFIRMAS ACTUALIZAR LA PLANTILLA?\n\n` +
                 `Nuevo periodo: ${period}\n` +
-                `Archivo original: ${file.name}\n` +
-                `Se renombrará a: Plantilla_CP.pdf\n` +
+                `Archivo: ${file.name}\n` +
+                `Se guardará como: Plantilla_CP.pdf\n` +
                 `Tamaño: ${(file.size / 1024).toFixed(2)} KB\n\n` +
-                `⚠️ La plantilla actual se respaldará automáticamente.\n\n` +
+                `⚠️ ATENCIÓN: La plantilla actual será REEMPLAZADA.\n` +
+                `Asegúrate de tener un respaldo antes de continuar.\n\n` +
                 `Esta plantilla se usará para TODAS las cartas de presentación.`
             );
 
@@ -556,7 +558,7 @@ $session->guard(['upis', 'admin']);
             }
 
             // Deshabilitar botón para evitar doble envío
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Subiendo plantilla...';
 

@@ -5,7 +5,7 @@
  * Gestiona las plantillas PDF y la numeración automática de oficios
  * 
  * @package SIEP\Models
- * @version 1.0.0
+ * @version 2.0.0 - Contador global unificado
  * @date 2025-10-27
  */
 
@@ -24,6 +24,7 @@ class LetterTemplate {
     public $academic_period;
     public $academic_year;
     public $current_letter_number;
+    public $global_letter_counter;
     public $updated_by_user_id;
     
     /**
@@ -100,72 +101,72 @@ class LetterTemplate {
     }
     
     /**
- * Generar y obtener siguiente número de oficio GLOBAL
- * Formato: "No. 01-2025/2"
- * TODAS las cartas comparten el mismo contador
- * 
- * @return string|false - Número de oficio formateado
- */
-public function generateNextLetterNumber() {
-    try {
-        // Iniciar transacción para evitar duplicados
-        $this->conn->beginTransaction();
-        
-        // Incrementar el contador GLOBAL en la primera plantilla
-        $sql = "UPDATE letter_templates 
-                SET global_letter_counter = global_letter_counter + 1 
-                WHERE id = 1";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        
-        // Obtener el nuevo número y periodo
-        $sql2 = "SELECT global_letter_counter, academic_period 
-                 FROM letter_templates 
-                 WHERE id = 1";
-        
-        $stmt2 = $this->conn->prepare($sql2);
-        $stmt2->execute();
-        
-        $result = $stmt2->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$result) {
+     * Generar y obtener siguiente número de oficio GLOBAL
+     * Formato: "No. 01-2025/2"
+     * TODAS las cartas comparten el mismo contador
+     * 
+     * @return string|false - Número de oficio formateado
+     */
+    public function generateNextLetterNumber() {
+        try {
+            // Iniciar transacción para evitar duplicados
+            $this->conn->beginTransaction();
+            
+            // Incrementar el contador GLOBAL en la primera plantilla
+            $sql = "UPDATE letter_templates 
+                    SET global_letter_counter = global_letter_counter + 1 
+                    WHERE id = 1";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            
+            // Obtener el nuevo número y periodo
+            $sql2 = "SELECT global_letter_counter, academic_period 
+                     FROM letter_templates 
+                     WHERE id = 1";
+            
+            $stmt2 = $this->conn->prepare($sql2);
+            $stmt2->execute();
+            
+            $result = $stmt2->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$result) {
+                $this->conn->rollBack();
+                return false;
+            }
+            
+            // Confirmar transacción
+            $this->conn->commit();
+            
+            // Formatear como "No. 01-2025/2"
+            $formatted = sprintf(
+                "No. %02d-%s", 
+                $result['global_letter_counter'], 
+                $result['academic_period']
+            );
+            
+            return $formatted;
+            
+        } catch (Exception $e) {
             $this->conn->rollBack();
+            error_log("Error generando número de oficio: " . $e->getMessage());
             return false;
         }
-        
-        // Confirmar transacción
-        $this->conn->commit();
-        
-        // Formatear como "No. 01-2025/2"
-        $formatted = sprintf(
-            "No. %02d-%s", 
-            $result['global_letter_counter'], 
-            $result['academic_period']
-        );
-        
-        return $formatted;
-        
-    } catch (Exception $e) {
-        $this->conn->rollBack();
-        error_log("Error generando número de oficio: " . $e->getMessage());
-        return false;
     }
-}
 
-/**
- * Obtener el contador global actual (sin incrementar)
- * 
- * @return int
- */
-public function getCurrentGlobalCounter() {
-    $sql = "SELECT global_letter_counter FROM letter_templates WHERE id = 1";
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    return $result ? (int)$result['global_letter_counter'] : 0;
-}
+    /**
+     * Obtener el contador global actual (sin incrementar)
+     * 
+     * @return int
+     */
+    public function getCurrentGlobalCounter() {
+        $sql = "SELECT global_letter_counter FROM letter_templates WHERE id = 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $result ? (int)$result['global_letter_counter'] : 0;
+    }
     
     /**
      * Actualizar plantilla (subir nuevo PDF)
@@ -194,27 +195,14 @@ public function getCurrentGlobalCounter() {
     }
     
     /**
- * Reiniciar CONTADOR GLOBAL (inicio de año escolar)
- * 
- * @return bool
- */
-public function resetAllCounters() {
-    $sql = "UPDATE letter_templates 
-            SET global_letter_counter = 0 
-            WHERE id = 1";
-    
-    $stmt = $this->conn->prepare($sql);
-    return $stmt->execute();
-}
-    
-    /**
-     * Reiniciar TODOS los contadores (inicio de año escolar)
+     * Reiniciar CONTADOR GLOBAL (inicio de año escolar)
      * 
      * @return bool
      */
     public function resetAllCounters() {
         $sql = "UPDATE letter_templates 
-                SET current_letter_number = 0";
+                SET global_letter_counter = 0 
+                WHERE id = 1";
         
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute();
@@ -266,7 +254,7 @@ public function resetAllCounters() {
     
     /**
      * Obtener estadísticas de uso de plantillas
-     * (Cuántas cartas se han generado de cada tipo)
+     * (Basado en el contador global)
      * 
      * @return array
      */
@@ -274,11 +262,11 @@ public function resetAllCounters() {
         $sql = "SELECT 
                     lt.template_type,
                     lt.template_name,
-                    lt.current_letter_number as total_generated,
+                    lt.global_letter_counter as total_generated,
                     lt.academic_period
                 FROM letter_templates lt
                 WHERE lt.is_active = 1
-                ORDER BY lt.current_letter_number DESC";
+                ORDER BY lt.template_type ASC";
         
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
@@ -315,4 +303,23 @@ public function resetAllCounters() {
         // TODO: Implementar cuando se tenga tabla audit_logs
         return $this->getTemplateByType($template_type);
     }
+
+    /**
+ * Actualizar la ruta del archivo para todas las plantillas
+ * (Útil cuando se sube una nueva plantilla única)
+ * 
+ * @param string $file_path - Nueva ruta del archivo
+ * @return bool
+ */
+public function updateAllTemplatePaths($file_path) {
+    $sql = "UPDATE letter_templates 
+            SET template_file_path = :file_path,
+                updated_at = NOW()
+            WHERE is_active = 1";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':file_path', $file_path);
+    
+    return $stmt->execute();
+}
 }

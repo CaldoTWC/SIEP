@@ -600,6 +600,7 @@ public function manageTemplates() {
 /**
  * Subir nueva plantilla y actualizar periodo académico
  * El archivo se renombra automáticamente a "Plantilla_CP.pdf"
+ * SOBRESCRIBE la plantilla actual (sin backup automático)
  */
 public function uploadTemplate() {
     $this->session->guard(['upis', 'admin']);
@@ -652,10 +653,10 @@ public function uploadTemplate() {
     // ✅ NOMBRE FIJO: Plantilla_CP.pdf
     $destination = $templates_dir . '/Plantilla_CP.pdf';
     
-    // Backup de la plantilla anterior (con timestamp)
+    // ✅ SOBRESCRIBIR directamente (sin backup)
+    // Si existe, se elimina y se reemplaza por el nuevo
     if (file_exists($destination)) {
-        $backup_name = $templates_dir . '/Plantilla_CP_backup_' . date('Y-m-d_His') . '.pdf';
-        copy($destination, $backup_name);
+        unlink($destination); // Eliminar el archivo anterior
     }
     
     // Mover archivo nuevo (se renombra automáticamente)
@@ -670,14 +671,12 @@ public function uploadTemplate() {
     
     // Actualizar periodo académico para todas las plantillas
     $upis_user_id = $_SESSION['user_id'];
-    $success = $templateModel->updateAcademicPeriodForAll($academic_period, $upis_user_id);
+    $success1 = $templateModel->updateAcademicPeriodForAll($academic_period, $upis_user_id);
     
-    // También actualizar la ruta del archivo (por si cambió)
-    $sql = "UPDATE letter_templates SET template_file_path = 'templates/Plantilla_CP.pdf'";
-    $stmt = $templateModel->conn->prepare($sql);
-    $stmt->execute();
+    // Actualizar la ruta del archivo en todas las plantillas
+    $success2 = $templateModel->updateAllTemplatePaths('templates/Plantilla_CP.pdf');
     
-    if ($success) {
+    if ($success1 && $success2) {
         header('Location: /SIEP/public/index.php?action=manageTemplates&status=success');
     } else {
         header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
