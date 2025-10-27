@@ -151,4 +151,67 @@ class Accreditation {
         
         return $stmt->execute();
     }
+
+    /**
+ * Crear acreditación con todos los campos (Versión Completa)
+ * 
+ * @param int $student_user_id
+ * @param string $boleta
+ * @param string $programa_academico
+ * @param string $empresa_nombre
+ * @param string $tipo_acreditacion ('A' o 'B')
+ * @param string $fecha_inicio
+ * @param string $fecha_fin
+ * @param string $final_report_path
+ * @param string $validation_letter_path
+ * @param array $metadata
+ * @return bool
+ */
+public function createSubmissionComplete(
+    $student_user_id,
+    $boleta,
+    $programa_academico,
+    $empresa_nombre,
+    $tipo_acreditacion,
+    $fecha_inicio,
+    $fecha_fin,
+    $final_report_path,
+    $validation_letter_path,
+    $metadata = []
+) {
+    $sql = "INSERT INTO accreditation_submissions 
+            (student_user_id, boleta, programa_academico, empresa_nombre, 
+             tipo_acreditacion, fecha_inicio, fecha_fin, 
+             final_report_path, validation_letter_path, metadata, 
+             status, submitted_at) 
+            VALUES 
+            (:student_user_id, :boleta, :programa_academico, :empresa_nombre,
+             :tipo_acreditacion, :fecha_inicio, :fecha_fin,
+             :final_report_path, :validation_letter_path, :metadata,
+             'pending', NOW())";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    // Convertir metadata a JSON
+    $metadata_json = is_array($metadata) ? json_encode($metadata, JSON_UNESCAPED_UNICODE) : $metadata;
+    
+    $stmt->bindParam(':student_user_id', $student_user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':boleta', $boleta);
+    $stmt->bindParam(':programa_academico', $programa_academico);
+    $stmt->bindParam(':empresa_nombre', $empresa_nombre);
+    $stmt->bindParam(':tipo_acreditacion', $tipo_acreditacion);
+    $stmt->bindParam(':fecha_inicio', $fecha_inicio);
+    $stmt->bindParam(':fecha_fin', $fecha_fin);
+    $stmt->bindParam(':final_report_path', $final_report_path);
+    $stmt->bindParam(':validation_letter_path', $validation_letter_path);
+    $stmt->bindParam(':metadata', $metadata_json);
+    
+    $result = $stmt->execute();
+    
+    if ($result) {
+        $this->lastInsertId = $this->conn->lastInsertId();
+    }
+    
+    return $result;
+}
 }

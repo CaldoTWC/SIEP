@@ -122,74 +122,227 @@ public function submitDetailedLetterRequest() {
 /**
  * Procesa la subida de documentos de acreditación
  */
+/**
+ * Procesa la subida de documentos de acreditación (VERSIÓN COMPLETA)
+ */
 public function submitAccreditation() {
     $this->session->guard(['student']);
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['final_report']) || empty($_FILES['signed_validation_letter'])) {
-        die("Acceso no válido o faltan archivos.");
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=invalid_request');
+        exit;
     }
 
     $student_id = $_SESSION['user_id'];
     $profile = $this->userModel->getStudentProfileById($student_id);
     $boleta = $profile['boleta'];
     
-    // ✅ USAR FileHelper
+    // ========================================
+    // 1. VALIDAR CHECKBOX DE PRIVACIDAD
+    // ========================================
+    if (!isset($_POST['privacy_accept']) || $_POST['privacy_accept'] !== 'on') {
+        header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=privacy_required');
+        exit;
+    }
+    
+    // ========================================
+    // 2. DETECTAR TIPO A o B AUTOMÁTICAMENTE
+    // ========================================
+    $empresa_registrada = $_POST['empresa_registrada'] ?? '';
+    $tipo_acreditacion = ($empresa_registrada === 'si') ? 'B' : 'A';
+    
+    // ========================================
+    // 3. PREPARAR METADATA (JSON)
+    // ========================================
+    $metadata = [
+        'student_info' => [
+            'nombres' => $_POST['nombres'] ?? '',
+            'apellido_paterno' => $_POST['apellido_paterno'] ?? '',
+            'apellido_materno' => $_POST['apellido_materno'] ?? '',
+            'boleta' => $_POST['boleta'] ?? '',
+            'email_institucional' => $_POST['email_institucional'] ?? '',
+            'telefono' => $_POST['telefono'] ?? '',
+            'programa_academico' => $_POST['programa_academico'] ?? '',
+            'semestre' => $_POST['semestre'] ?? ''
+        ],
+        'company_info' => [
+            'agencia_colocacion' => $_POST['agencia_colocacion'] ?? '',
+            'nombre_comercial' => $_POST['nombre_comercial'] ?? '',
+            'tipo_empresa' => $_POST['tipo_empresa'] ?? '',
+            'giro' => $_POST['giro'] ?? '',
+            'razon_social' => $_POST['razon_social'] ?? '',
+            'fecha_inicio' => $_POST['fecha_inicio'] ?? '',
+            'fecha_fin' => $_POST['fecha_fin'] ?? '',
+            'dias_estancia' => $_POST['dias_estancia'] ?? [],
+            'nombre_contacto' => $_POST['nombre_contacto'] ?? '',
+            'email_contacto' => $_POST['email_contacto'] ?? '',
+            'telefono_contacto' => $_POST['telefono_contacto'] ?? '',
+            'empresa_registrada' => $empresa_registrada
+        ],
+        'tipo_acreditacion' => $tipo_acreditacion,
+        'privacy_accepted' => true,
+        'submission_date' => date('Y-m-d H:i:s')
+    ];
+    
+    // ========================================
+    // 4. PROCESAR ARCHIVOS
+    // ========================================
     require_once(__DIR__ . '/../Lib/FileHelper.php');
     $upload_dir = FileHelper::getStudentSubfolder($boleta, $profile['first_name'], $profile['last_name_p'], 'accreditation');
-
-    // Procesar archivos
-    $report_file = $_FILES['final_report'];
-    $report_ext = pathinfo($report_file['name'], PATHINFO_EXTENSION);
-    $report_new_name = $boleta . '_ReporteFinal_' . time() . '.' . $report_ext;
-    $report_full_path = $upload_dir . '/' . $report_new_name;
     
-    if (!move_uploaded_file($report_file['tmp_name'], $report_full_path)) {
-        header('Location: /SIEP/public/index.php?action=studentDashboard&status=upload_error'); 
+    $archivos_subidos = [];
+    
+    // 4.1 Boleta Global (OBLIGATORIO PARA TODOS)
+    if (isset($_FILES['boleta_global']) && $_FILES['boleta_global']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['boleta_global'];
+        $filename = $boleta . '_BoletaGlobal_' . time() . '.pdf';
+        $full_path = $upload_dir . '/' . $filename;
+        
+        if (move_uploaded_file($file['tmp_name'], $full_path)) {
+            $archivos_subidos['boleta_global'] = FileHelper::getRelativePath($full_path);
+        }
+    } else {
+        header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=missing_boleta');
         exit;
     }
-
-    $letter_file = $_FILES['signed_validation_letter'];
-    $letter_ext = pathinfo($letter_file['name'], PATHINFO_EXTENSION);
-    $letter_new_name = $boleta . '_ConstanciaValidacion_' . time() . '.' . $letter_ext;
-    $letter_full_path = $upload_dir . '/' . $letter_new_name;
     
-    if (!move_uploaded_file($letter_file['tmp_name'], $letter_full_path)) {
-        header('Location: /SIEP/public/index.php?action=studentDashboard&status=upload_error'); 
-        exit;
+    // 4.2 Archivos según TIPO A o B
+    if ($tipo_acreditacion === 'A') {
+        // TIPO A: Empresa NO Registrada
+        
+        // Recibos de nómina (múltiples archivos)
+        if (isset($_FILES['recibos_nomina']) && !empty($_FILES['recibos_nomina']['name'][0])) {
+            $recibos = [];
+            $total_recibos = count($_FILES['recibos_nomina']['name']);
+            
+            for ($i = 0; $i < $total_recibos; $i++) {
+                if ($_FILES['recibos_nomina']['error'][$i] === UPLOAD_ERR_OK) {
+                    $filename = $boleta . '_ReciboNomina_' . ($i + 1) . '_' . time() . '.pdf';
+                    $full_path = $upload_dir . '/' . $filename;
+                    
+                    if (move_uploaded_file($_FILES['recibos_nomina']['tmp_name'][$i], $full_path)) {
+                        $recibos[] = FileHelper::getRelativePath($full_path);
+                    }
+                }
+            }
+            
+            $archivos_subidos['recibos_nomina'] = $recibos;
+        }
+        
+        // Constancia laboral
+        if (isset($_FILES['constancia_laboral']) && $_FILES['constancia_laboral']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['constancia_laboral'];
+            $filename = $boleta . '_ConstanciaLaboral_' . time() . '.pdf';
+            $full_path = $upload_dir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                $archivos_subidos['constancia_laboral'] = FileHelper::getRelativePath($full_path);
+            }
+        }
+        
+        // Reporte final (viene del input reporte_final sin sufijo)
+        if (isset($_FILES['reporte_final']) && $_FILES['reporte_final']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['reporte_final'];
+            $filename = $boleta . '_ReporteFinal_' . time() . '.pdf';
+            $full_path = $upload_dir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                $archivos_subidos['reporte_final'] = FileHelper::getRelativePath($full_path);
+            }
+        }
+        
+    } else {
+        // TIPO B: Empresa Registrada
+        
+        // Carta de aceptación
+        if (isset($_FILES['carta_aceptacion']) && $_FILES['carta_aceptacion']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['carta_aceptacion'];
+            $filename = $boleta . '_CartaAceptacion_' . time() . '.pdf';
+            $full_path = $upload_dir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                $archivos_subidos['carta_aceptacion'] = FileHelper::getRelativePath($full_path);
+            }
+        }
+        
+        // Constancia de validación
+        if (isset($_FILES['constancia_validacion']) && $_FILES['constancia_validacion']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['constancia_validacion'];
+            $filename = $boleta . '_ConstanciaValidacion_' . time() . '.pdf';
+            $full_path = $upload_dir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                $archivos_subidos['constancia_validacion'] = FileHelper::getRelativePath($full_path);
+            }
+        }
+        
+        // Reporte final
+        if (isset($_FILES['reporte_final']) && $_FILES['reporte_final']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['reporte_final'];
+            $filename = $boleta . '_ReporteFinal_' . time() . '.pdf';
+            $full_path = $upload_dir . '/' . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                $archivos_subidos['reporte_final'] = FileHelper::getRelativePath($full_path);
+            }
+        }
     }
-
-    // ✅ Guardar rutas relativas
-    $report_path = FileHelper::getRelativePath($report_full_path);
-    $letter_path = FileHelper::getRelativePath($letter_full_path);
-
+    
+    // Agregar archivos a metadata
+    $metadata['documents'] = $archivos_subidos;
+    
+    // ========================================
+    // 5. GUARDAR EN BASE DE DATOS
+    // ========================================
     require_once(__DIR__ . '/../Models/Accreditation.php');
     $accreditationModel = new Accreditation();
-
-    if ($accreditationModel->createSubmission($student_id, $report_path, $letter_path)) {
-        
+    
+    // Preparar datos principales
+    $boleta_estudiante = $_POST['boleta'] ?? $boleta;
+    $programa = $_POST['programa_academico'] ?? '';
+    $empresa = $_POST['nombre_comercial'] ?? '';
+    $fecha_inicio = $_POST['fecha_inicio'] ?? null;
+    $fecha_fin = $_POST['fecha_fin'] ?? null;
+    
+    // Usar el método createSubmissionComplete (lo crearemos)
+    $result = $accreditationModel->createSubmissionComplete(
+        $student_id,
+        $boleta_estudiante,
+        $programa,
+        $empresa,
+        $tipo_acreditacion,
+        $fecha_inicio,
+        $fecha_fin,
+        $archivos_subidos['reporte_final'] ?? '',
+        $archivos_subidos['constancia_validacion'] ?? $archivos_subidos['constancia_laboral'] ?? '',
+        $metadata
+    );
+    
+    if ($result) {
         // ========================================
-        // 🆕 ENVIAR NOTIFICACIONES POR EMAIL
+        // 6. ENVIAR NOTIFICACIONES POR EMAIL
         // ========================================
-        
         require_once(__DIR__ . '/../Services/EmailService.php');
         $emailService = new EmailService();
         
-        // Preparar datos para emails
+        // Datos del estudiante
         $student_data = [
             'user_id' => $student_id,
             'full_name' => $profile['first_name'] . ' ' . 
                            $profile['last_name_p'] . ' ' . 
                            $profile['last_name_m'],
-            'boleta' => $profile['boleta'],
-            'career' => $profile['career'],
+            'boleta' => $boleta,
+            'career' => $programa,
             'email' => $profile['email']
         ];
         
+        // Datos de la acreditación
         $submission_data = [
             'id' => $accreditationModel->getLastInsertId(),
-            'company_name' => $_POST['company_name'] ?? 'No especificada',
-            'start_date' => $_POST['start_date'] ?? date('Y-m-d'),
-            'end_date' => $_POST['end_date'] ?? date('Y-m-d'),
+            'tipo' => $tipo_acreditacion,
+            'empresa_nombre' => $empresa,
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_fin' => $fecha_fin,
             'created_at' => date('Y-m-d H:i:s'),
             'review_url' => getenv('SITE_URL') . '/index.php?action=reviewAccreditation&id=' . $accreditationModel->getLastInsertId()
         ];
@@ -197,13 +350,9 @@ public function submitAccreditation() {
         // Enviar confirmación al estudiante
         $emailService->notifyStudentAccreditationReceived($student_data, $submission_data);
         
-        // ========================================
-        // FIN DE NOTIFICACIONES
-        // ========================================
-        
-        header('Location: /SIEP/public/index.php?action=studentDashboard&status=accreditation_sent');
+        header('Location: /SIEP/public/index.php?action=studentDashboard&status=accreditation_sent&tipo=' . $tipo_acreditacion);
     } else {
-        header('Location: /SIEP/public/index.php?action=studentDashboard&status=upload_error');
+        header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=upload_error');
     }
     exit;
 }

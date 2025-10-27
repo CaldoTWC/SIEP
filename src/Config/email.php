@@ -13,7 +13,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
-// Cargar librerías externas (Composer)
+// Cargar librerías externas
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Cargar variables de entorno
@@ -32,12 +32,12 @@ function getMailer()
     try {
         // Configuración del servidor SMTP
         $mail->isSMTP();
-        $mail->Host       = getenv('SMTP_HOST') ?: 'smtp.office365.com';
+        $mail->Host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
         $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
         $mail->SMTPAuth   = getenv('SMTP_AUTH') === 'true';
         $mail->Username   = getenv('SMTP_USER');
         $mail->Password   = getenv('SMTP_PASS');
-        $mail->SMTPSecure = getenv('SMTP_SECURE') ?: PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = getenv('SMTP_SECURE') === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
 
         // Configuración del remitente
         $mail->setFrom(
@@ -50,7 +50,7 @@ function getMailer()
         $mail->Encoding = 'base64';
         $mail->isHTML(true);
 
-        // Debug (solo en pruebas)
+        // Debug (solo en pruebas - descomenta si necesitas ver detalles)
         // $mail->SMTPDebug = SMTP::DEBUG_SERVER;
         // $mail->Debugoutput = 'html';
 
@@ -99,13 +99,13 @@ function sendTestEmail($to_email)
         <div class="content">
             <p>Este es un correo de prueba enviado desde el <strong>Sistema Integral de Estancias Profesionales (SIEP)</strong>.</p>
             <div class="success">
-                <p>La configuración SMTP parece estar funcionando correctamente 🎉</p>
+                <p>La configuración SMTP con Gmail está funcionando correctamente 🎉</p>
             </div>
             <h3>Detalles Técnicos:</h3>
             <ul>
-                <li><strong>Servidor SMTP:</strong> {$_ENV['SMTP_HOST']}</li>
-                <li><strong>Puerto:</strong> {$_ENV['SMTP_PORT']}</li>
-                <li><strong>Seguridad:</strong> {$_ENV['SMTP_SECURE']}</li>
+                <li><strong>Servidor SMTP:</strong> smtp.gmail.com</li>
+                <li><strong>Puerto:</strong> 587</li>
+                <li><strong>Seguridad:</strong> STARTTLS</li>
                 <li><strong>Fecha:</strong> {date('d/m/Y H:i:s')}</li>
             </ul>
         </div>
@@ -117,7 +117,7 @@ function sendTestEmail($to_email)
 </html>
 HTML;
 
-        $mail->AltBody = "Configuración SMTP correcta.\n\nServidor: {$_ENV['SMTP_HOST']}\nPuerto: {$_ENV['SMTP_PORT']}\nFecha: " . date('d/m/Y H:i:s');
+        $mail->AltBody = "Configuración SMTP correcta con Gmail.\n\nServidor: smtp.gmail.com\nPuerto: 587\nFecha: " . date('d/m/Y H:i:s');
 
         $success = $mail->send();
 
