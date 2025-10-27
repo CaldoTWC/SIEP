@@ -584,4 +584,122 @@ public function rejectAccreditation() {
         $docService->generateHistoryReport($processes);
     }
 
+/**
+ * Mostrar vista de gestión de plantillas
+ */
+public function manageTemplates() {
+    $this->session->guard(['upis', 'admin']);
+    
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    $templates = $templateModel->getAllActiveTemplates();
+    
+    require_once(__DIR__ . '/../Views/upis/manage_templates.php');
+}
+
+/**
+ * Subir nueva plantilla y actualizar periodo académico
+ */
+public function uploadTemplate() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+        exit;
+    }
+    
+    // Validar periodo académico
+    $academic_period = trim($_POST['academic_period'] ?? '');
+    if (!preg_match('/^\d{4}\/[12]$/', $academic_period)) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=invalid_period');
+        exit;
+    }
+    
+    // Validar archivo PDF
+    if (!isset($_FILES['template_file']) || $_FILES['template_file']['error'] !== UPLOAD_ERR_OK) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+        exit;
+    }
+    
+    $file = $_FILES['template_file'];
+    
+    // Validar que sea PDF
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if ($mime_type !== 'application/pdf') {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=invalid_file');
+        exit;
+    }
+    
+    // Validar tamaño (máximo 10 MB)
+    $max_size = 10 * 1024 * 1024; // 10 MB
+    if ($file['size'] > $max_size) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=invalid_file');
+        exit;
+    }
+    
+    // Definir ruta destino
+    $templates_dir = __DIR__ . '/../../templates';
+    
+    // Crear directorio si no existe
+    if (!is_dir($templates_dir)) {
+        mkdir($templates_dir, 0755, true);
+    }
+    
+    // Nombre del archivo destino
+    $destination = $templates_dir . '/Plantilla_CP.pdf';
+    
+    // Backup de la plantilla anterior (opcional)
+    if (file_exists($destination)) {
+        $backup_name = $templates_dir . '/Plantilla_CP_backup_' . date('Y-m-d_His') . '.pdf';
+        copy($destination, $backup_name);
+    }
+    
+    // Mover archivo nuevo
+    if (!move_uploaded_file($file['tmp_name'], $destination)) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+        exit;
+    }
+    
+    // Actualizar en la base de datos
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    
+    // Actualizar periodo académico para todas las plantillas
+    $upis_user_id = $_SESSION['user_id'];
+    $success = $templateModel->updateAcademicPeriodForAll($academic_period, $upis_user_id);
+    
+    if ($success) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=success');
+    } else {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+    }
+    exit;
+}
+
+/**
+ * Reiniciar contadores de numeración de cartas
+ */
+public function resetLetterCounters() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+        exit;
+    }
+    
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    
+    if ($templateModel->resetAllCounters()) {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=counters_reset');
+    } else {
+        header('Location: /SIEP/public/index.php?action=manageTemplates&status=error');
+    }
+    exit;
+}
+
+
 }

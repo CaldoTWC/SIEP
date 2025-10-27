@@ -82,6 +82,15 @@ $session->guard(['upis', 'admin']);
                 <div class="counter"><?php echo $pendingLettersCount; ?></div>
             </a>
 
+            <!-- Gestión de Plantillas -->
+<a href="/SIEP/public/index.php?action=manageTemplates" class="task-card">
+    <div class="info">
+        <h3>🎨 Plantillas</h3>
+        <p>Gestionar plantillas de cartas y periodo académico.</p>
+    </div>
+    <div class="counter">⚙️</div>
+</a>
+
             <a href="/SIEP/public/index.php?action=showUploadDocumentsForm" class="task-card">
                 <div class="info">
                 <h3>📤 Subir Cartas Firmadas</h3>

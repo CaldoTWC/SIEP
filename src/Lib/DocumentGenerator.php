@@ -22,99 +22,164 @@ class DocumentService {
      *                             Si es false (por defecto), envía el PDF al navegador para su visualización.
      * @return string|void - Devuelve el contenido del PDF si $returnAsString es true, de lo contrario no devuelve nada.
      */
-    public function generatePresentationLetter(array $student_data, bool $returnAsString = false) {
-        
-        $pdf = new Fpdi('P', 'mm', 'Letter');
-        $pdf->AddPage();
-        
-        // --- Importar la Plantilla PDF de Fondo ---
-        $templatePath = __DIR__ . '/../../templates/CP.pdf'; 
-        if (!file_exists($templatePath)) {
-            die('Error: No se encontró el archivo de plantilla CP.pdf.');
-        }
-        $pdf->setSourceFile($templatePath);
-        $templateId = $pdf->importPage(1);
-        $pdf->useTemplate($templateId, 0, 0, 215.9, 279.4);
-
-        // --- INICIO DEL POSICIONAMIENTO PRECISO DEL TEXTO ---
-        // (Ajusta los valores de X, Y si es necesario)
-
-        // --- Bloque de Asunto y Fecha ---
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->SetXY(20, 50); // Posición inicial del bloque
-        $pdf->Cell(0, 7, utf8_decode('Asunto: Carta de presentación'), 0, 1, 'L');
-        $pdf->SetX(20);
-        $pdf->Cell(0, 7, utf8_decode('No 0-2025/2'), 0, 1, 'L'); // Número de oficio de ejemplo
-        
-        $pdf->SetXY(145, 62); // Posición de la fecha
-        setlocale(LC_TIME, 'es_MX.UTF-8', 'Spanish_Mexico', 'Spanish');
-        $fecha = 'CDMX, a ' . date('d') . ' de ' . strftime('%B') . ' de ' . date('Y');
-        $pdf->Cell(0, 7, utf8_decode($fecha), 0, 1, 'L');
-
-        // --- Destinatario ---
-        $pdf->SetXY(20, 78); // Posición de "A QUIEN CORRESPONDA"
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(0, 7, utf8_decode('A QUIEN CORRESPONDA'), 0, 1, 'L');
-        
-        // --- Cuerpo de la Carta ---
-        $pdf->SetFont('Arial', '', 11.5);
-        $lineHeight = 6.5;
-
-        // Posicionamiento del primer párrafo
-        $pdf->SetXY(20, 95);
-
-        // -- Primer Párrafo (usando Write para mezclar estilos) --
-        $pdf->Write($lineHeight, utf8_decode("Por este medio me, permito presentar a "));
-        $pdf->SetFont('', 'B');
-        $pdf->Write($lineHeight, utf8_decode(strtoupper($student_data['full_name'])));
-        $pdf->SetFont('', '');
-        $pdf->Write($lineHeight, utf8_decode(" con número de boleta "));
-        $pdf->SetFont('', 'B');
-        $pdf->Write($lineHeight, utf8_decode($student_data['boleta']));
-        $pdf->SetFont('', '');
-        $pdf->Write($lineHeight, utf8_decode(", quien es estudiante de la carrera de " . $student_data['career'] . " que se imparte en la Escuela Superior de Cómputo del Instituto Politécnico Nacional, y quien cursa actualmente con un porcentaje de avance de " . number_format($student_data['percentage_progress'], 2) . "%."));
-        
-        // Posicionamiento del segundo párrafo
-        $pdf->SetXY(20, 120);
-
-        // -- Segundo Párrafo --
-        $pdf->Write($lineHeight, utf8_decode("De acuerdo con lo anterior, "));
-        $pdf->SetFont('', 'B');
-        $pdf->Write($lineHeight, utf8_decode(strtoupper($student_data['full_name'])));
-        $pdf->SetFont('', '');
-        $pdf->Write($lineHeight, utf8_decode(" se encuentra en posibilidades de desarrollar la estancia profesional, la cual corresponde a una de las unidades de aprendizaje de su programa de estudios, misma que pretende realizar en la empresa o dependencia a su digno cargo."));
-
-        // Posicionamiento del tercer párrafo
-        $pdf->SetXY(20, 150);
-        $pdf->MultiCell(0, $lineHeight, utf8_decode("Sin otro particular, queda de usted."), 0, 'L');
-        
-        // --- Bloque de Firma ---
-        $pdf->SetXY(20, 165); // Posicionamiento de ATENTAMENTE
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(0, 7, 'ATENTAMENTE', 0, 1, 'L');
-        $pdf->SetX(20);
-        $pdf->Cell(0, 7, utf8_decode('"La Técnica al Servicio de la Patria"'), 0, 1, 'L');
-        
-        // Posicionamiento del nombre del firmante
-        $pdf->SetXY(20, 195);
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(0, 6, utf8_decode('Dr. José Asunción Enríquez Zárate'), 0, 1, 'L');
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->SetX(20);
-        $pdf->Cell(0, 6, utf8_decode('Subdirector de Servicios Educativos'), 0, 1, 'L');
-        $pdf->SetX(20);
-        $pdf->Cell(0, 6, utf8_decode('e Integración Social'), 0, 1, 'L');
-
-        // --- Salida del PDF ---
-        $filename = 'Carta_Presentacion_' . $student_data['boleta'] . '.pdf';
-        
-        if ($returnAsString) {
-            return $pdf->Output('S', $filename, true);
-        } else {
-            $pdf->Output('I', $filename, true);
-            exit;
-        }
+    /**
+ * Genera la Carta de Presentación en PDF basada en la plantilla oficial.
+ * VERSIÓN 2.0: Soporte para 4 variantes de plantillas
+ *
+ * @param array $student_data - Datos del estudiante y configuración
+ * @param string $letter_number - Número de oficio (ej: "No. 01-2025/2")
+ * @param bool $returnAsString - Si es true, devuelve el PDF como string
+ * @return string|void
+ */
+public function generatePresentationLetter(array $student_data, $letter_number = 'No. 00-2025/2', bool $returnAsString = false) {
+    
+    $pdf = new Fpdi('P', 'mm', 'Letter');
+    $pdf->AddPage();
+    
+    // --- Determinar qué plantilla usar ---
+    $has_recipient = isset($student_data['has_specific_recipient']) ? (bool)$student_data['has_specific_recipient'] : false;
+    $requires_hours = isset($student_data['requires_hours']) ? (bool)$student_data['requires_hours'] : false;
+    
+    // Determinar tipo de plantilla
+    if ($has_recipient && $requires_hours) {
+        $template_type = 'destinatario_horas';
+    } elseif ($has_recipient && !$requires_hours) {
+        $template_type = 'destinatario';
+    } elseif (!$has_recipient && $requires_hours) {
+        $template_type = 'normal_horas';
+    } else {
+        $template_type = 'normal';
     }
+    
+    // Si viene especificado en student_data, usar ese
+    if (isset($student_data['letter_template_type'])) {
+        $template_type = $student_data['letter_template_type'];
+    }
+    
+    // --- Obtener ruta de la plantilla desde la BD ---
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    $template_info = $templateModel->getTemplateByType($template_type);
+    
+    if (!$template_info) {
+        die('Error: No se encontró la plantilla del tipo: ' . $template_type);
+    }
+    
+    $templatePath = __DIR__ . '/../../' . $template_info['template_file_path'];
+    
+    if (!file_exists($templatePath)) {
+        die('Error: No se encontró el archivo de plantilla: ' . $templatePath);
+    }
+    
+    $pdf->setSourceFile($templatePath);
+    $templateId = $pdf->importPage(1);
+    $pdf->useTemplate($templateId, 0, 0, 215.9, 279.4);
+
+    // --- INICIO DEL POSICIONAMIENTO DEL TEXTO ---
+    
+    // --- Bloque de Asunto y Número de Oficio ---
+    $pdf->SetFont('Arial', '', 11);
+    $pdf->SetXY(20, 50);
+    $pdf->Cell(0, 7, utf8_decode('Asunto: Carta de presentación'), 0, 1, 'L');
+    $pdf->SetX(20);
+    $pdf->Cell(0, 7, utf8_decode($letter_number), 0, 1, 'L');
+    
+    // --- Fecha ---
+    $pdf->SetXY(145, 62);
+    setlocale(LC_TIME, 'es_MX.UTF-8', 'Spanish_Mexico', 'Spanish');
+    $fecha = 'CDMX, a ' . date('d') . ' de ' . strftime('%B') . ' de ' . date('Y');
+    $pdf->Cell(0, 7, utf8_decode($fecha), 0, 1, 'L');
+
+    // --- Destinatario ---
+    $pdf->SetXY(20, 78);
+    $pdf->SetFont('Arial', 'B', 11);
+    
+    if ($has_recipient && !empty($student_data['recipient_name'])) {
+        // Destinatario específico
+        $pdf->Cell(0, 7, utf8_decode(strtoupper($student_data['recipient_name'])), 0, 1, 'L');
+        $pdf->SetX(20);
+        $pdf->SetFont('Arial', '', 11);
+        $pdf->Cell(0, 6, utf8_decode($student_data['recipient_position']), 0, 1, 'L');
+        $pdf->SetX(20);
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->Cell(0, 6, utf8_decode('P R E S E N T E'), 0, 1, 'L');
+    } else {
+        // A quien corresponda
+        $pdf->Cell(0, 7, utf8_decode('A QUIEN CORRESPONDA'), 0, 1, 'L');
+    }
+    
+    // --- Cuerpo de la Carta ---
+    $pdf->SetFont('Arial', '', 11.5);
+    $lineHeight = 6.5;
+
+    // Ajustar posición inicial según si tiene destinatario
+    $y_start = $has_recipient ? 110 : 95;
+    $pdf->SetXY(20, $y_start);
+
+    // -- Primer Párrafo --
+    $pdf->Write($lineHeight, utf8_decode("Por este medio me permito presentar a "));
+    $pdf->SetFont('', 'B');
+    $pdf->Write($lineHeight, utf8_decode(strtoupper($student_data['full_name'])));
+    $pdf->SetFont('', '');
+    $pdf->Write($lineHeight, utf8_decode(" con número de boleta "));
+    $pdf->SetFont('', 'B');
+    $pdf->Write($lineHeight, utf8_decode($student_data['boleta']));
+    $pdf->SetFont('', '');
+    $pdf->Write($lineHeight, utf8_decode(", quien es estudiante de la carrera de " . $student_data['career'] . 
+        " que se imparte en la Escuela Superior de Cómputo del Instituto Politécnico Nacional, y quien cursa actualmente con un porcentaje de avance de " . 
+        number_format($student_data['percentage_progress'], 2) . "%."));
+    
+    // -- Segundo Párrafo --
+    $y_second = $has_recipient ? 140 : 125;
+    $pdf->SetXY(20, $y_second);
+    
+    $pdf->Write($lineHeight, utf8_decode("De acuerdo con lo anterior, "));
+    $pdf->SetFont('', 'B');
+    $pdf->Write($lineHeight, utf8_decode(strtoupper($student_data['full_name'])));
+    $pdf->SetFont('', '');
+    $pdf->Write($lineHeight, utf8_decode(" se encuentra en posibilidades de desarrollar la estancia profesional, la cual corresponde a una de las unidades de aprendizaje de su programa de estudios"));
+    
+    // Si requiere horas, agregar mención
+    if ($requires_hours) {
+        $pdf->Write($lineHeight, utf8_decode(", misma que deberá cubrir un total de 200 horas"));
+    }
+    
+    $pdf->Write($lineHeight, utf8_decode(", misma que pretende realizar en la empresa o dependencia a su digno cargo."));
+
+    // -- Tercer Párrafo (Despedida) --
+    $y_third = $has_recipient ? 175 : 160;
+    $pdf->SetXY(20, $y_third);
+    $pdf->MultiCell(0, $lineHeight, utf8_decode("Sin otro particular, queda de usted."), 0, 'L');
+    
+    // --- Bloque de Firma ---
+    $y_firma = $has_recipient ? 190 : 175;
+    $pdf->SetXY(20, $y_firma);
+    $pdf->SetFont('Arial', 'B', 11);
+    $pdf->Cell(0, 7, 'ATENTAMENTE', 0, 1, 'L');
+    $pdf->SetX(20);
+    $pdf->Cell(0, 7, utf8_decode('"La Técnica al Servicio de la Patria"'), 0, 1, 'L');
+    
+    // Nombre del firmante
+    $y_name = $has_recipient ? 220 : 205;
+    $pdf->SetXY(20, $y_name);
+    $pdf->SetFont('Arial', 'B', 11);
+    $pdf->Cell(0, 6, utf8_decode('Dr. José Asunción Enríquez Zárate'), 0, 1, 'L');
+    $pdf->SetFont('Arial', '', 11);
+    $pdf->SetX(20);
+    $pdf->Cell(0, 6, utf8_decode('Subdirector de Servicios Educativos'), 0, 1, 'L');
+    $pdf->SetX(20);
+    $pdf->Cell(0, 6, utf8_decode('e Integración Social'), 0, 1, 'L');
+
+    // --- Salida del PDF ---
+    $filename = 'Carta_Presentacion_' . $student_data['boleta'] . '.pdf';
+    
+    if ($returnAsString) {
+        return $pdf->Output('S', $filename, true);
+    } else {
+        $pdf->Output('I', $filename, true);
+        exit;
+    }
+}
 
     
     public function generateAcceptanceLetter(array $student_data, array $company_data) {

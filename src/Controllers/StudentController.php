@@ -55,6 +55,10 @@ class StudentController {
     /**
  * Procesa el formulario de solicitud de carta de presentación
  */
+/**
+ * Procesa el formulario de solicitud de carta de presentación
+ * VERSIÓN ACTUALIZADA: Soporte para 4 variantes de plantillas
+ */
 public function submitDetailedLetterRequest() {
     $this->session->guard(['student']);
 
@@ -69,7 +73,36 @@ public function submitDetailedLetterRequest() {
     $first_name = $profile['first_name'];
     $last_name_p = $profile['last_name_p'];
     
-    // ✅ USAR FileHelper
+    // ✅ NUEVOS CAMPOS: Determinar tipo de carta solicitada
+    $has_specific_recipient = isset($_POST['has_specific_recipient']) ? (int)$_POST['has_specific_recipient'] : 0;
+    $requires_hours = isset($_POST['requires_hours']) ? (int)$_POST['requires_hours'] : 0;
+    
+    // Datos del destinatario (si aplica)
+    $recipient_name = null;
+    $recipient_position = null;
+    if ($has_specific_recipient) {
+        $recipient_name = trim($_POST['recipient_name'] ?? '');
+        $recipient_position = trim($_POST['recipient_position'] ?? '');
+        
+        // Validar que se proporcionaron los datos del destinatario
+        if (empty($recipient_name) || empty($recipient_position)) {
+            header('Location: /SIEP/public/index.php?action=showDetailedLetterForm&status=recipient_required');
+            exit;
+        }
+    }
+    
+    // ✅ DETERMINAR TIPO DE PLANTILLA
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    $letter_template_type = $templateModel->determineTemplateType($has_specific_recipient, $requires_hours);
+    
+    // Validar que la plantilla existe
+    if (!$templateModel->templateExists($letter_template_type)) {
+        header('Location: /SIEP/public/index.php?action=showDetailedLetterForm&status=template_not_found');
+        exit;
+    }
+    
+    // ✅ PROCESAR ARCHIVO DE KÁRDEX
     require_once(__DIR__ . '/../Lib/FileHelper.php');
     $upload_dir = FileHelper::getStudentSubfolder($boleta, $first_name, $last_name_p, 'transcripts');
     
@@ -88,7 +121,7 @@ public function submitDetailedLetterRequest() {
         exit;
     }
     
-    $transcript_new_name = $boleta . '_BoletaGlobal_' . time() . '.pdf';
+    $transcript_new_name = $boleta . '_Kardex_' . time() . '.pdf';
     $full_path = $upload_dir . '/' . $transcript_new_name;
     
     if (!move_uploaded_file($transcript_file['tmp_name'], $full_path)) {
@@ -99,20 +132,27 @@ public function submitDetailedLetterRequest() {
     // ✅ Guardar ruta relativa
     $transcript_path = FileHelper::getRelativePath($full_path);
     
+    // ✅ PREPARAR DATOS PARA INSERCIÓN
     $applicationModel = new DocumentApplication();
     $data = [
         'student_user_id' => $_SESSION['user_id'],
         'credits_percentage' => $_POST['credits_percentage'],
         'current_semester' => $_POST['semester'],
         'transcript_path' => $transcript_path,
-        'target_company_name' => null,
-        'target_recipient_name' => null,
-        'target_recipient_position' => null,
-        'show_required_hours' => 1
+        'target_company_name' => trim($_POST['target_company_name'] ?? ''),
+        'has_specific_recipient' => $has_specific_recipient,
+        'recipient_name' => $recipient_name,
+        'recipient_position' => $recipient_position,
+        'requires_hours' => $requires_hours,
+        'letter_template_type' => $letter_template_type
     ];
 
-    if ($applicationModel->create($data)) {
-        header('Location: /SIEP/public/index.php?action=studentDashboard&status=request_sent');
+    // ✅ GUARDAR SOLICITUD
+    $application_id = $applicationModel->createWithTemplate($data);
+    
+    if ($application_id) {
+        // Redirigir con éxito indicando el tipo de carta solicitada
+        header('Location: /SIEP/public/index.php?action=studentDashboard&status=request_sent&template=' . $letter_template_type);
     } else {
         header('Location: /SIEP/public/index.php?action=studentDashboard&status=request_failed');
     }

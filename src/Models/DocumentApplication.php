@@ -360,4 +360,182 @@ public function updateStatusForMultipleIds($request_ids, $new_status, $reviewer_
     
     return $stmt->execute();
 }
+
+/**
+ * Crear solicitud con información de plantilla
+ * (Versión mejorada con soporte para variantes)
+ * 
+ * @param array $data - Datos de la solicitud
+ * @return bool|int - ID de la solicitud creada o false
+ */
+public function createWithTemplate($data) {
+    $sql = "INSERT INTO document_applications 
+            (student_user_id, application_type, credits_percentage, current_semester,
+             transcript_path, target_company_name, 
+             has_specific_recipient, recipient_name, recipient_position,
+             requires_hours, letter_template_type, status) 
+            VALUES 
+            (:student_user_id, 'presentation_letter', :credits_percentage, :current_semester,
+             :transcript_path, :target_company_name,
+             :has_specific_recipient, :recipient_name, :recipient_position,
+             :requires_hours, :letter_template_type, 'pending')";
+    
+    $stmt = $this->conn->prepare($sql);
+    
+    $stmt->bindParam(':student_user_id', $data['student_user_id'], PDO::PARAM_INT);
+    $stmt->bindParam(':credits_percentage', $data['credits_percentage']);
+    $stmt->bindParam(':current_semester', $data['current_semester'], PDO::PARAM_INT);
+    $stmt->bindParam(':transcript_path', $data['transcript_path']);
+    $stmt->bindParam(':target_company_name', $data['target_company_name']);
+    $stmt->bindParam(':has_specific_recipient', $data['has_specific_recipient'], PDO::PARAM_INT);
+    $stmt->bindParam(':recipient_name', $data['recipient_name']);
+    $stmt->bindParam(':recipient_position', $data['recipient_position']);
+    $stmt->bindParam(':requires_hours', $data['requires_hours'], PDO::PARAM_INT);
+    $stmt->bindParam(':letter_template_type', $data['letter_template_type']);
+    
+    if ($stmt->execute()) {
+        return $this->conn->lastInsertId();
+    }
+    
+    return false;
+}
+
+/**
+ * Asignar número de oficio a una solicitud aprobada
+ * 
+ * @param int $application_id - ID de la solicitud
+ * @param string $letter_number - Número de oficio (ej: "No. 01-2025/2")
+ * @return bool
+ */
+public function assignLetterNumber($application_id, $letter_number) {
+    $sql = "UPDATE document_applications 
+            SET letter_number = :letter_number
+            WHERE id = :application_id";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':letter_number', $letter_number);
+    $stmt->bindParam(':application_id', $application_id, PDO::PARAM_INT);
+    
+    return $stmt->execute();
+}
+
+/**
+ * Obtener solicitud completa con información de plantilla
+ * 
+ * @param int $application_id
+ * @return array|false
+ */
+public function findByIdWithTemplate($application_id) {
+    $sql = "SELECT 
+                da.*,
+                u.first_name, u.last_name_p, u.last_name_m, u.email, u.phone_number,
+                sp.boleta, sp.career,
+                lt.template_name, lt.template_file_path, lt.academic_period
+            FROM document_applications da
+            JOIN users u ON da.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN letter_templates lt ON da.letter_template_type = lt.template_type
+            WHERE da.id = :application_id";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':application_id', $application_id, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener solicitudes pendientes con información de plantilla
+ * 
+ * @return array
+ */
+public function getPendingPresentationLettersWithTemplate() {
+    $sql = "SELECT 
+                da.id, da.created_at, da.credits_percentage, da.current_semester,
+                da.target_company_name, da.transcript_path,
+                da.has_specific_recipient, da.recipient_name, da.recipient_position,
+                da.requires_hours, da.letter_template_type,
+                u.first_name, u.last_name_p, u.last_name_m, u.email,
+                sp.boleta, sp.career,
+                lt.template_name
+            FROM document_applications da
+            JOIN users u ON da.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN letter_templates lt ON da.letter_template_type = lt.template_type
+            WHERE da.status = 'pending' 
+              AND da.application_type = 'presentation_letter'
+            ORDER BY da.created_at ASC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener solicitudes aprobadas listas para generar carta
+ * (Con toda la información necesaria para el PDF)
+ * 
+ * @return array
+ */
+public function getApprovedLettersReadyForGeneration() {
+    $sql = "SELECT 
+                da.id as application_id,
+                da.letter_number,
+                da.letter_template_type,
+                da.has_specific_recipient,
+                da.recipient_name,
+                da.recipient_position,
+                da.requires_hours,
+                da.target_company_name,
+                u.id as student_user_id,
+                u.first_name,
+                u.last_name_p,
+                u.last_name_m,
+                CONCAT(u.first_name, ' ', u.last_name_p, ' ', u.last_name_m) as full_name,
+                sp.boleta,
+                sp.career,
+                da.credits_percentage as percentage_progress,
+                lt.template_file_path,
+                lt.academic_period
+            FROM document_applications da
+            JOIN users u ON da.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN letter_templates lt ON da.letter_template_type = lt.template_type
+            WHERE da.status = 'approved'
+              AND da.application_type = 'presentation_letter'
+              AND da.letter_number IS NOT NULL
+            ORDER BY da.updated_at DESC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener estadísticas de uso de plantillas
+ * 
+ * @return array
+ */
+public function getTemplateUsageStats() {
+    $sql = "SELECT 
+                da.letter_template_type,
+                lt.template_name,
+                COUNT(*) as total_requests,
+                SUM(CASE WHEN da.status = 'approved' THEN 1 ELSE 0 END) as approved_count,
+                SUM(CASE WHEN da.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN da.status = 'rejected' THEN 1 ELSE 0 END) as rejected_count
+            FROM document_applications da
+            LEFT JOIN letter_templates lt ON da.letter_template_type = lt.template_type
+            WHERE da.application_type = 'presentation_letter'
+            GROUP BY da.letter_template_type, lt.template_name
+            ORDER BY total_requests DESC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 }

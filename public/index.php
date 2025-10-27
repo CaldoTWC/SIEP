@@ -220,6 +220,19 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->downloadHistoryReport();
         break;
+    
+    // Gestión de plantillas (UPIS)
+case 'manageTemplates':
+    $upisController->manageTemplates();
+    break;
+
+case 'uploadTemplate':
+    $upisController->uploadTemplate();
+    break;
+
+case 'resetLetterCounters':
+    $upisController->resetLetterCounters();
+    break;
 
     case 'downloadDocument':
     require_once(__DIR__ . '/../src/Controllers/FileController.php');
