@@ -125,6 +125,9 @@ public function submitDetailedLetterRequest() {
 /**
  * Procesa la subida de documentos de acreditación (VERSIÓN COMPLETA)
  */
+/**
+ * Procesa la subida de documentos de acreditación (VERSIÓN COMPLETA)
+ */
 public function submitAccreditation() {
     $this->session->guard(['student']);
 
@@ -134,7 +137,15 @@ public function submitAccreditation() {
     }
 
     $student_id = $_SESSION['user_id'];
-    $profile = $this->userModel->getStudentProfileById($student_id);
+    
+    // ✅ USAR EL MÉTODO CORRECTO
+    $profile = $this->userModel->getStudentProfileForForm($student_id);
+    
+    if (!$profile) {
+        header('Location: /SIEP/public/index.php?action=studentDashboard&status=profile_error');
+        exit;
+    }
+    
     $boleta = $profile['boleta'];
     
     // ========================================
@@ -240,7 +251,7 @@ public function submitAccreditation() {
             }
         }
         
-        // Reporte final (viene del input reporte_final sin sufijo)
+        // Reporte final
         if (isset($_FILES['reporte_final']) && $_FILES['reporte_final']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['reporte_final'];
             $filename = $boleta . '_ReporteFinal_' . time() . '.pdf';
@@ -304,7 +315,7 @@ public function submitAccreditation() {
     $fecha_inicio = $_POST['fecha_inicio'] ?? null;
     $fecha_fin = $_POST['fecha_fin'] ?? null;
     
-    // Usar el método createSubmissionComplete (lo crearemos)
+    // Usar el método createSubmissionComplete
     $result = $accreditationModel->createSubmissionComplete(
         $student_id,
         $boleta_estudiante,
