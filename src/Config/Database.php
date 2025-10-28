@@ -3,7 +3,7 @@
  * Clase Singleton para conexión a base de datos
  * 
  * @package SIEP\Config
- * @version 2.2.0 - Con configuración de zona horaria
+ * @version 2.2.1 - Corrección de zona horaria con fallback
  */
 
 // Cargar variables de entorno
@@ -42,15 +42,35 @@ class Database {
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
             
+            // ✅ PASO 1: Crear la conexión
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
-            // ✅ CONFIGURAR ZONA HORARIA DE MYSQL A MÉXICO (UTC-6)
-            $this->conn->exec("SET time_zone = '-06:00'");
+            // ✅ PASO 2: Intentar configurar zona horaria (si falla, continuar)
+            try {
+                $this->conn->exec("SET time_zone = '-06:00'");
+            } catch (PDOException $tz_error) {
+                // Si falla, solo registrar en log pero NO romper la conexión
+                error_log("Advertencia: No se pudo configurar zona horaria MySQL: " . $tz_error->getMessage());
+            }
             
         } catch(PDOException $e) {
-            // Versión de producción (segura)
-            error_log("Error de conexión: " . $e->getMessage());
-            die("Error de conexión a la base de datos. Por favor, contacte al administrador.");
+            // Registrar error completo en el log
+            error_log("Error de conexión DB: " . $e->getMessage());
+            
+            // ✅ En desarrollo mostrar error, en producción mensaje genérico
+            if (getenv('APP_ENV') === 'production') {
+                die("Error de conexión a la base de datos. Por favor, contacte al administrador.");
+            } else {
+                // ✅ MODO DEBUG: Mostrar error completo
+                die("<div style='background:#f8d7da; padding:20px; border:2px solid #dc3545; border-radius:5px; font-family:monospace;'>" .
+                    "<h3 style='color:#721c24;'>❌ Error de Conexión a la Base de Datos</h3>" .
+                    "<p><strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "</p>" .
+                    "<p><strong>Host:</strong> {$this->host}</p>" .
+                    "<p><strong>Base de datos:</strong> {$this->db_name}</p>" .
+                    "<p><strong>Usuario:</strong> {$this->username}</p>" .
+                    "<hr><p><small>Verifica que XAMPP esté corriendo y que la base de datos 'siep' exista.</small></p>" .
+                    "</div>");
+            }
         }
     }
     
@@ -71,7 +91,7 @@ class Database {
      * 
      * @return PDO
      */
-    public function getConnection() {  // ✅ DEBE SER PUBLIC
+    public function getConnection() {
         return $this->conn;
     }
     
