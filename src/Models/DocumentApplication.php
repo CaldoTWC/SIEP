@@ -240,50 +240,44 @@ public function getAllApprovedLetterIds() {
 }
 
 /**
- * Obtener datos completos de estudiantes con solicitudes aprobadas
- * Para generar las cartas en PDF
+ * Obtener datos de estudiantes para cartas aprobadas
+ * Incluye información de plantillas
  * 
- * @param array $approved_ids IDs de solicitudes aprobadas
+ * @param array $application_ids - IDs de solicitudes
  * @return array
  */
-public function getApprovedStudentDataForLetters($approved_ids) {
-    if (empty($approved_ids)) {
+public function getApprovedStudentDataForLetters($application_ids) {
+    if (empty($application_ids)) {
         return [];
     }
     
-    // Crear placeholders
-    $placeholders = [];
-    foreach ($approved_ids as $index => $id) {
-        $placeholders[] = ':id' . $index;
-    }
-    $placeholders_string = implode(',', $placeholders);
+    $placeholders = implode(',', array_fill(0, count($application_ids), '?'));
     
     $sql = "SELECT 
                 da.id as application_id,
-                u.id as student_user_id,
+                da.letter_number,
+                da.letter_template_type,
+                da.has_specific_recipient,
+                da.recipient_name,
+                da.recipient_position,
+                da.requires_hours,
+                da.credits_percentage as percentage_progress,
                 u.first_name,
                 u.last_name_p,
                 u.last_name_m,
-                CONCAT(u.first_name, ' ', u.last_name_p, ' ', u.last_name_m) as full_name,
-                CONCAT(u.last_name_p, ' ', u.last_name_m) as last_name,
                 sp.boleta,
-                sp.career,
-                da.credits_percentage as percentage_progress
+                sp.career
             FROM document_applications da
             JOIN users u ON da.student_user_id = u.id
             JOIN student_profiles sp ON u.id = sp.user_id
-            WHERE da.id IN ($placeholders_string)
+            WHERE da.id IN ($placeholders)
               AND da.status = 'approved'
-              AND da.application_type = 'presentation_letter'";
+              AND da.application_type = 'presentation_letter'
+            ORDER BY sp.boleta ASC";
     
     $stmt = $this->conn->prepare($sql);
+    $stmt->execute($application_ids);
     
-    // Bind cada ID
-    foreach ($approved_ids as $index => $id) {
-        $stmt->bindValue(':id' . $index, (int)$id, PDO::PARAM_INT);
-    }
-    
-    $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 

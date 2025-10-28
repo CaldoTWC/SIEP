@@ -1,7 +1,8 @@
 <?php
 // Archivo: public/index.php (Versión Completa y Corregida)
-
+date_default_timezone_set('America/Mexico_City');
 $action = $_GET['action'] ?? 'home';
+
 
 switch ($action) {
 

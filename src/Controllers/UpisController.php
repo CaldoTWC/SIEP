@@ -268,42 +268,100 @@ public function rejectCompany() {
         exit;
     }
 
-    public function downloadAllApprovedLetters() {
-        $this->session->guard(['upis', 'admin']);
-        $applicationModel = new DocumentApplication();
-        $approved_ids = $applicationModel->getAllApprovedLetterIds();
-        if (empty($approved_ids)) {
-            header('Location: /SIEP/public/index.php?action=upisDashboard&status=no_approved_letters');
-            exit;
-        }
-        $docService = new DocumentService();
-        $students_data = $applicationModel->getApprovedStudentDataForLetters($approved_ids);
-        if (empty($students_data)) { die("Error: No se encontraron datos para las solicitudes aprobadas."); }
-        $zip = new ZipArchive();
-        $zipFileName = 'Todas_Cartas_Presentacion_' . date('Y-m-d') . '.zip';
-        $zipFilePath = sys_get_temp_dir() . '/' . $zipFileName;
-        if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) { die("Error al crear ZIP."); }
-        foreach ($students_data as $student) {
-            $student_data_for_pdf = [
-                'full_name' => $student['first_name'] . ' ' . $student['last_name'],
-                'boleta' => $student['boleta'],
-                'career' => $student['career'],
-                'percentage_progress' => $student['percentage_progress']
-            ];
-            $pdfContent = $docService->generatePresentationLetter($student_data_for_pdf, true);
-            $pdfFileName = $student['boleta'] . '_CPSF.pdf';
-            $zip->addFromString($pdfFileName, $pdfContent);
-        }
-        $zip->close();
-        header('Content-Type: application/zip');
-        header('Content-Disposition: attachment; filename="' . basename($zipFileName) . '"');
-        header('Content-Length: ' . filesize($zipFilePath));
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        readfile($zipFilePath);
-        unlink($zipFilePath);
+    /**
+ * Descargar todas las cartas aprobadas como ZIP
+ * VERSIÓN 2.0: Con sistema de plantillas y numeración automática
+ */
+/**
+ * Descargar todas las cartas aprobadas como ZIP
+ * VERSIÓN 2.0: Con sistema de plantillas y numeración automática
+ */
+public function downloadAllApprovedLetters() {
+    $this->session->guard(['upis', 'admin']);
+    
+    $applicationModel = new DocumentApplication();
+    $approved_ids = $applicationModel->getAllApprovedLetterIds();
+    
+    if (empty($approved_ids)) {
+        header('Location: /SIEP/public/index.php?action=reviewLetters&status=no_approved_letters');
         exit;
     }
+    
+    // ✅ PASO 1: Generar números de oficio para las cartas que no lo tengan
+    require_once(__DIR__ . '/../Models/LetterTemplate.php');
+    $templateModel = new LetterTemplate();
+    
+    foreach ($approved_ids as $app_id) {
+        $application = $applicationModel->findById($app_id);
+        
+        // Si no tiene número de oficio, generarlo
+        if (empty($application['letter_number'])) {
+            $letter_number = $templateModel->generateNextLetterNumber();
+            if ($letter_number) {
+                $applicationModel->assignLetterNumber($app_id, $letter_number);
+            }
+        }
+    }
+    
+    // ✅ PASO 2: Obtener datos actualizados con números de oficio
+    $students_data = $applicationModel->getApprovedStudentDataForLetters($approved_ids);
+    
+    if (empty($students_data)) {
+        die("Error: No se encontraron datos para las solicitudes aprobadas.");
+    }
+    
+    // ✅ PASO 3: Crear ZIP
+    $zip = new ZipArchive();
+    $zipFileName = 'Cartas_Presentacion_' . date('Y-m-d_His') . '.zip';
+    $zipFilePath = sys_get_temp_dir() . '/' . $zipFileName;
+    
+    if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+        die("Error al crear archivo ZIP.");
+    }
+    
+    // ✅ PASO 4: Generar cada PDF
+    $docGenerator = new DocumentService(); // ✅ NOMBRE CORRECTO DE LA CLASE
+    
+    foreach ($students_data as $student) {
+        $student_data_for_pdf = [
+            'full_name' => $student['first_name'] . ' ' . $student['last_name_p'] . ' ' . $student['last_name_m'],
+            'boleta' => $student['boleta'],
+            'career' => $student['career'],
+            'percentage_progress' => $student['percentage_progress'],
+            'has_specific_recipient' => (bool)($student['has_specific_recipient'] ?? 0),
+            'recipient_name' => $student['recipient_name'] ?? null,
+            'recipient_position' => $student['recipient_position'] ?? null,
+            'requires_hours' => (bool)($student['requires_hours'] ?? 0),
+            'letter_template_type' => $student['letter_template_type'] ?? 'normal'
+        ];
+        
+        // Obtener número de oficio
+        $application = $applicationModel->findById($student['application_id']);
+        $letter_number = $application['letter_number'] ?? 'No. 00-2025/2';
+        
+        // Generar PDF
+        $pdfContent = $docGenerator->generatePresentationLetter($student_data_for_pdf, $letter_number, true);
+        
+        // Nombre del archivo
+        $pdfFileName = $student['boleta'] . '_CPSF.pdf';
+        
+        // Agregar al ZIP
+        $zip->addFromString($pdfFileName, $pdfContent);
+    }
+    
+    $zip->close();
+    
+    // ✅ PASO 5: Descargar ZIP
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . basename($zipFileName) . '"');
+    header('Content-Length: ' . filesize($zipFilePath));
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    readfile($zipFilePath);
+    unlink($zipFilePath);
+    exit;
+}
 
     public function clearAllApprovedLetters() {
         // CORRECCIÓN: Usar '$this->session' para acceder a la propiedad de la clase.

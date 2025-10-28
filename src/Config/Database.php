@@ -3,7 +3,7 @@
  * Clase Singleton para conexión a base de datos
  * 
  * @package SIEP\Config
- * @version 2.1.0
+ * @version 2.2.0 - Con configuración de zona horaria
  */
 
 // Cargar variables de entorno
@@ -44,6 +44,9 @@ class Database {
             
             $this->conn = new PDO($dsn, $this->username, $this->password, $options);
             
+            // ✅ CONFIGURAR ZONA HORARIA DE MYSQL A MÉXICO (UTC-6)
+            $this->conn->exec("SET time_zone = '-06:00'");
+            
         } catch(PDOException $e) {
             // Versión de producción (segura)
             error_log("Error de conexión: " . $e->getMessage());
@@ -68,7 +71,7 @@ class Database {
      * 
      * @return PDO
      */
-    public function getConnection() {
+    public function getConnection() {  // ✅ DEBE SER PUBLIC
         return $this->conn;
     }
     
