@@ -88,12 +88,23 @@ $session->guard(['upis', 'admin']);
         .module-description {
             color: #666;
             font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .module-stat {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
         }
         
         .module-card.review { border-top: 4px solid #ffc107; }
+        .module-card.review .module-stat { color: #ffc107; }
+        
         .module-card.manage { border-top: 4px solid #28a745; }
+        .module-card.manage .module-stat { color: #28a745; }
+        
         .module-card.trash { border-top: 4px solid #dc3545; }
-        .module-card.reports { border-top: 4px solid #17a2b8; }
+        .module-card.trash .module-stat { color: #dc3545; }
     </style>
 </head>
 <body>
@@ -133,11 +144,6 @@ $session->guard(['upis', 'admin']);
         <!-- Módulos de Gestión -->
         <div class="modules-grid">
             
-                   <h2>Módulos de Gestión</h2>
-        
-        <!-- Módulos de Gestión -->
-        <div class="modules-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-            
             <!-- Módulo 1: Revisar Nuevas -->
             <a href="/SIEP/public/index.php?action=reviewVacancies" class="module-card review">
                 <div class="module-icon">📥</div>
@@ -145,7 +151,7 @@ $session->guard(['upis', 'admin']);
                 <div class="module-description">
                     Aprobar o rechazar vacantes pendientes de revisión
                 </div>
-                <div style="margin-top: 15px; font-size: 24px; font-weight: bold; color: #ffc107;">
+                <div class="module-stat">
                     <?php echo $stats['pending'] ?? 0; ?> pendientes
                 </div>
             </a>
@@ -157,7 +163,7 @@ $session->guard(['upis', 'admin']);
                 <div class="module-description">
                     Supervisar y desactivar vacantes publicadas
                 </div>
-                <div style="margin-top: 15px; font-size: 24px; font-weight: bold; color: #28a745;">
+                <div class="module-stat">
                     <?php echo $stats['approved'] ?? 0; ?> activas
                 </div>
             </a>
@@ -169,14 +175,8 @@ $session->guard(['upis', 'admin']);
                 <div class="module-description">
                     Restaurar o eliminar definitivamente vacantes canceladas
                 </div>
-                <div style="margin-top: 15px; font-size: 24px; font-weight: bold; color: #dc3545;">
+                <div class="module-stat">
                     <?php echo $stats['rejected'] ?? 0; ?> en papelera
-                </div>
-            </a>
-            
-        </div>
-                <div style="margin-top: 15px; font-size: 24px; font-weight: bold; color: #17a2b8;">
-                    <?php echo $stats['total'] ?? 0; ?> total
                 </div>
             </a>
             

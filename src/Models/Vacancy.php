@@ -505,49 +505,52 @@ class Vacancy {
      * @param string $status Estado de la vacante
      * @return array
      */
-    public function getVacanciesByStatus($status) {
-        $sql = "SELECT 
-                    v.*,
-                    cp.company_name,
-                    cp.rfc,
-                    u.email as company_email,
-                    reviewer.name as reviewer_name
-                FROM vacancies v
-                JOIN company_profiles cp ON v.company_profile_id = cp.id
-                JOIN users u ON cp.contact_person_user_id = u.id
-                LEFT JOIN users reviewer ON v.approved_by = reviewer.id
-                WHERE v.status = :status
-                ORDER BY v.posted_at DESC";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':status', $status);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    /**
+ * Obtener vacantes por estado específico
+ */
+public function getVacanciesByStatus($status) {
+    $sql = "SELECT 
+                v.*,
+                c.company_name,
+                c.rfc,
+                u.email as company_email,
+                u.phone as company_phone,
+                CONCAT(reviewer.first_name, ' ', reviewer.last_name_p, ' ', reviewer.last_name_m) as reviewer_name
+            FROM vacancies v
+            INNER JOIN company_profiles c ON v.company_id = c.user_id
+            INNER JOIN users u ON v.company_id = u.id
+            LEFT JOIN users reviewer ON v.reviewed_by = reviewer.id
+            WHERE v.status = :status
+            ORDER BY v.posted_at DESC";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     
     /**
-     * Obtener todas las vacantes para reportes
-     * Sin filtros, con datos de empresa
-     * 
-     * @return array
-     */
-    public function getAllVacanciesForReports() {
-        $sql = "SELECT 
-                    v.*,
-                    cp.company_name,
-                    cp.rfc,
-                    u.email as company_email
-                FROM vacancies v
-                JOIN company_profiles cp ON v.company_profile_id = cp.id
-                JOIN users u ON cp.contact_person_user_id = u.id
-                ORDER BY v.posted_at DESC";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+ * Obtener todas las vacantes para reportes
+ */
+public function getAllVacanciesForReports() {
+    $sql = "SELECT 
+                v.*,
+                c.company_name,
+                c.rfc,
+                u.email as company_email,
+                CONCAT(reviewer.first_name, ' ', reviewer.last_name_p, ' ', reviewer.last_name_m) as reviewer_name
+            FROM vacancies v
+            INNER JOIN company_profiles c ON v.company_id = c.user_id
+            INNER JOIN users u ON v.company_id = u.id
+            LEFT JOIN users reviewer ON v.reviewed_by = reviewer.id
+            ORDER BY v.posted_at DESC";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     
     /**
      * Obtener vacantes agrupadas por empresa

@@ -874,20 +874,20 @@ public function resetLetterCounters() {
     exit;
 }
 
-    // ========================================================================
+        // ========================================================================
     // GESTIÓN DE CICLO DE VIDA DE VACANTES (NUEVO)
     // ========================================================================
     
     /**
      * Hub principal de gestión de vacantes
      */
-    public function hub() {
+    public function vacancyHub() {
         $this->session->guard(['upis', 'admin']);
         
         $vacancyModel = new Vacancy();
         $stats = $vacancyModel->getGlobalStatistics();
         
-        require_once(__DIR__ . '/../Views/upis/hub.php');
+        require_once(__DIR__ . '/../Views/upis/vacancy_hub.php');
     }
     
     /**
@@ -1031,18 +1031,6 @@ public function resetLetterCounters() {
         
         header('Location: /SIEP/public/index.php?action=vacancyTrash');
         exit;
-    }
-    
-    /**
-     * Vista de reportes y estadísticas
-     */
-    public function vacancyReports() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $stats = $vacancyModel->getGlobalStatistics();
-        
-        require_once(__DIR__ . '/../Views/upis/vacancy_reports.php');
     }
     
     /**
