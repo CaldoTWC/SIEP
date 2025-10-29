@@ -194,10 +194,10 @@ switch ($action) {
         break;
     
     // --- Hub de Vacantes (NUEVO) ---
-    case 'upisHub':
+    case 'vacancyHub':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
-        $upisController->hub();
+        $upisController->vacancyHub();
         break;
     
     // --- Gestionar Vacantes Activas (NUEVO) ---
@@ -230,11 +230,6 @@ switch ($action) {
         break;
     
     // --- Reportes y Estadísticas (NUEVO) ---
-    case 'vacancyReports':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->vacancyReports();
-        break;
     case 'exportActivePDF':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();

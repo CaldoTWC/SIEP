@@ -445,14 +445,45 @@ $session->guard(['upis']);
         </div>
     </div>
 
-    <!-- Modal para rechazar (simplificado) -->
+        <!-- Modal para rechazar -->
     <div id="rejectModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
         <div style="background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%;">
             <h3 style="color: #6f1d33; margin-top: 0;">Rechazar Vacante</h3>
             <form method="POST" action="/SIEP/public/index.php?action=rejectVacancy">
                 <input type="hidden" name="vacancy_id" id="reject_vacancy_id">
-                <label style="display: block; margin-bottom: 10px; font-weight: bold;">Motivo del rechazo:</label>
-                <textarea name="feedback" required style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                
+                <label style="display: block; margin: 15px 0 10px 0; font-weight: bold;">
+                    Motivo: <span style="color: red;">*</span>
+                </label>
+                
+                <label style="display: block; margin: 8px 0;">
+                    <input type="radio" name="rejection_reason" value="Información incompleta" required> 
+                    Información incompleta
+                </label>
+                <label style="display: block; margin: 8px 0;">
+                    <input type="radio" name="rejection_reason" value="Actividades no relacionadas" required> 
+                    Actividades no relacionadas con carrera
+                </label>
+                <label style="display: block; margin: 8px 0;">
+                    <input type="radio" name="rejection_reason" value="Apoyo económico insuficiente" required> 
+                    Apoyo económico insuficiente
+                </label>
+                <label style="display: block; margin: 8px 0;">
+                    <input type="radio" name="rejection_reason" value="Horarios inadecuados" required> 
+                    Horarios inadecuados
+                </label>
+                <label style="display: block; margin: 8px 0;">
+                    <input type="radio" name="rejection_reason" value="Otro" required> 
+                    Otro
+                </label>
+                
+                <label style="display: block; margin: 20px 0 10px 0; font-weight: bold;">
+                    Justificación detallada: <span style="color: red;">*</span>
+                </label>
+                <textarea name="rejection_notes" required 
+                          placeholder="Explica el motivo del rechazo para que la empresa pueda corregir..."
+                          style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                
                 <div style="margin-top: 20px; display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-reject">Confirmar Rechazo</button>
                     <button type="button" class="btn" style="background: #999;" onclick="closeRejectModal()">Cancelar</button>

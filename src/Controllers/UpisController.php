@@ -293,7 +293,7 @@ public function approveVacancy() {
 }
 
 /**
- * Rechazar una vacante
+ * Rechazar una vacante durante revisión inicial
  */
 public function rejectVacancy() {
     $this->session->guard(['upis', 'admin']);
@@ -305,10 +305,11 @@ public function rejectVacancy() {
     }
     
     $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
-    $rejection_reason = trim($_POST['rejection_reason'] ?? $_POST['comments'] ?? '');
+    $rejection_reason = trim($_POST['rejection_reason'] ?? '');
+    $rejection_notes = trim($_POST['rejection_notes'] ?? $_POST['comments'] ?? '');
     
-    if (!$vacancy_id || empty($rejection_reason)) {
-        $_SESSION['error'] = "Debe proporcionar una razón para el rechazo.";
+    if (!$vacancy_id || empty($rejection_reason) || empty($rejection_notes)) {
+        $_SESSION['error'] = "Debes proporcionar un motivo y justificación para el rechazo.";
         header('Location: /SIEP/public/index.php?action=reviewVacancies');
         exit;
     }
@@ -324,7 +325,8 @@ public function rejectVacancy() {
     
     $reviewer_id = $_SESSION['user_id'];
     
-    if ($vacancyModel->reject($vacancy_id, $reviewer_id)) {
+    // Llamar al método actualizado con los nuevos parámetros
+    if ($vacancyModel->reject($vacancy_id, $reviewer_id, $rejection_reason, $rejection_notes)) {
         
         // Enviar email con razón del rechazo
         require_once(__DIR__ . '/../Services/EmailService.php');
@@ -335,7 +337,7 @@ public function rejectVacancy() {
             'company_name' => $vacancy['company_name']
         ];
         
-        $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_reason);
+        $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
         
         $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.";
     } else {
