@@ -1,11 +1,7 @@
 <?php
-// Archivo: src/Views/company/dashboard.php (Versión 2.0)
-
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
 $session->guard(['company']); 
-
-// La variable $vacancies ahora está disponible gracias al controlador.
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -14,16 +10,38 @@ $session->guard(['company']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Empresa</title>
     <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <!-- Reutilizamos los estilos de la tabla del dashboard de la UPIS -->
     <style>
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #005a9c; color: white; } /* Un azul diferente para la empresa */
+        th { background-color: #005a9c; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
+        
         .status { font-weight: bold; padding: 5px; border-radius: 4px; color: white; text-align: center; }
-        .status.pending_review { background-color: #ffc107; color: #333; } /* Amarillo */
-        .status.approved { background-color: #28a745; } /* Verde */
-        .status.rejected { background-color: #dc3545; } /* Rojo */
+        .status.pending { background-color: #ffc107; color: #333; }
+        .status.approved { background-color: #28a745; }
+        
+        .help-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-complete { background: #17a2b8; color: white; }
+        .btn-cancel { background: #dc3545; color: white; }
+        .btn-view { background: #6c757d; color: white; }
     </style>
 </head>
 <body>
@@ -35,51 +53,198 @@ $session->guard(['company']);
             <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="btn">Publicar Nueva Vacante</a>
             <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="btn" style="background-color: #007bff;">Generar Carta de Aceptación</a>
             <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="btn" style="background-color: #28a745;">Generar Constancia de Validación</a>
-            <a href="#" class="btn" style="background-color: #005a9c;">Ver Mis Vacantes Publicadas</a>
         </div>
         
         <hr style="margin: 30px 0;">
         
         <h2>Mis Vacantes Publicadas</h2>
-        <?php if (empty($vacancies)): ?>
-            <p>Aún no has publicado ninguna vacante. ¡Crea la primera!</p>
+        
+        <!-- Cuadro de ayuda -->
+        <div class="help-box">
+            <strong>ℹ️ Guía rápida de acciones:</strong><br><br>
+            <strong>✔️ Completar:</strong> Usa cuando llenaste todos los cupos o la estancia concluyó exitosamente.<br>
+            <strong>❌ Cancelar:</strong> Usa cuando hay cambios de presupuesto, proyecto cancelado o reestructuración.
+        </div>
+        
+        <?php 
+        // Filtrar solo vacantes activas y pendientes (excluir completed y rejected)
+        $active_vacancies = array_filter($vacancies, function($v) {
+            return in_array($v['status'], ['pending', 'approved']);
+        });
+        ?>
+        
+        <?php if (empty($active_vacancies)): ?>
+            <p>Aún no has publicado ninguna vacante activa. ¡Crea una nueva!</p>
         <?php else: ?>
             <table>
                 <thead>
                     <tr>
                         <th>Título del Puesto</th>
                         <th>Modalidad</th>
+                        <th>Plazas</th>
+                        <th>Apoyo Mensual</th>
+                        <th>Publicada</th>
                         <th>Estado</th>
-                        <th>Acción</th> <!-- <-- NUEVA CABECERA -->
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($vacancies as $vacancy): ?>
+                    <?php foreach ($active_vacancies as $vacancy): ?>
                         <tr>
                             <td>
-                                <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>" title="Ver detalles">
-                                    <?php echo htmlspecialchars($vacancy['title']); ?>
-                                </a>
+                                <strong><?php echo htmlspecialchars($vacancy['title']); ?></strong>
                             </td>
                             <td><?php echo htmlspecialchars($vacancy['modality']); ?></td>
+                            <td><?php echo $vacancy['num_vacancies']; ?></td>
+                            <td>$<?php echo number_format($vacancy['economic_support'], 2); ?></td>
+                            <td><?php echo date('d/m/Y', strtotime($vacancy['posted_at'])); ?></td>
                             <td>
-                                <span class="status <?php echo htmlspecialchars($vacancy['status']); ?>">
-                                    <?php echo str_replace('_', ' ', ucfirst($vacancy['status'])); ?>
-                                </span>
+                                <?php
+                                if ($vacancy['status'] === 'pending') {
+                                    echo '<span class="status pending">⏳ Pendiente</span>';
+                                } else {
+                                    echo '<span class="status approved">✅ Activa</span>';
+                                }
+                                ?>
                             </td>
-                            <!-- NUEVA CELDA DE ACCIONES -->
-                            <td class="actions">
-                                <!-- El enlace ahora apunta a la acción 'deleteVacancy' -->
-                                <a href="/SIEP/public/index.php?action=deleteVacancy&id=<?php echo $vacancy['id']; ?>" class="delete" onclick="return confirm('¿Estás seguro de que deseas eliminar permanentemente esta vacante? Ya no será visible para los estudiantes.');">Eliminar</a>
+                            <td>
+                                <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>" 
+                                   class="btn-small btn-view">👁️ Ver</a>
+                                
+                                <?php if ($vacancy['status'] === 'approved'): ?>
+                                    <button onclick="showCompleteModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
+                                            class="btn-small btn-complete">✔️ Completar</button>
+                                    <button onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
+                                            class="btn-small btn-cancel">❌ Cancelar</button>
+                                <?php endif; ?>
+                                
+                                <?php if ($vacancy['status'] === 'pending'): ?>
+                                    <button onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
+                                            class="btn-small btn-cancel">❌ Cancelar</button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
-
-        <a href="/SIEP/public/index.php?action=logout" class="btn" style="background-color: #5a6a7e; margin-top: 30px;">Cerrar Sesión</a>
-        <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn btn-sm btn-outline-primary">🔐 Cambiar Contraseña</a>
     </div>
+    
+    <script>
+        // Modal para completar vacante
+        function showCompleteModal(id, title) {
+            const html = `
+                <div id="modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+                        <h3 style="margin-top: 0; color: #17a2b8;">✔️ Marcar como Completada</h3>
+                        <p><strong>Vacante:</strong> ${title}</p>
+                        
+                        <form method="POST" action="/SIEP/public/index.php?action=completeVacancy">
+                            <input type="hidden" name="vacancy_id" value="${id}">
+                            
+                            <label style="display: block; margin: 15px 0 10px 0; font-weight: bold;">
+                                ¿Por qué motivo? <span style="color: red;">*</span>
+                            </label>
+                            
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="completion_reason" value="Cupos llenos" required> 
+                                Todos los cupos fueron llenados
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="completion_reason" value="Estancia concluida" required> 
+                                Estancia concluyó satisfactoriamente
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="completion_reason" value="No se requieren más" required> 
+                                Ya no se requieren más candidatos
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="completion_reason" value="Otro" required> 
+                                Otro
+                            </label>
+                            
+                            <label style="display: block; margin: 20px 0 5px 0; font-weight: bold;">
+                                Comentarios adicionales (opcional):
+                            </label>
+                            <textarea name="completion_notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                            
+                            <div style="margin-top: 20px; text-align: right;">
+                                <button type="button" onclick="document.getElementById('modal').remove()" 
+                                        style="padding: 10px 20px; margin-right: 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    Cancelar
+                                </button>
+                                <button type="submit" 
+                                        style="padding: 10px 20px; background: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    ✔️ Confirmar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // Modal para cancelar vacante
+        function showCancelModal(id, title) {
+            const html = `
+                <div id="modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+                        <h3 style="margin-top: 0; color: #dc3545;">❌ Cancelar Vacante</h3>
+                        <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; color: #856404;">
+                            ⚠️ Esta acción no se puede deshacer
+                        </div>
+                        <p><strong>Vacante:</strong> ${title}</p>
+                        
+                        <form method="POST" action="/SIEP/public/index.php?action=deleteVacancy">
+                            <input type="hidden" name="vacancy_id" value="${id}">
+                            
+                            <label style="display: block; margin: 15px 0 10px 0; font-weight: bold;">
+                                Motivo: <span style="color: red;">*</span>
+                            </label>
+                            
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="rejection_reason" value="Cambio de presupuesto" required> 
+                                Cambio de presupuesto
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="rejection_reason" value="Proyecto cancelado" required> 
+                                Proyecto cancelado/pospuesto
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="rejection_reason" value="Reestructuración" required> 
+                                Reestructuración interna
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="rejection_reason" value="No encontró candidatos" required> 
+                                No se encontraron candidatos
+                            </label>
+                            <label style="display: block; margin: 8px 0;">
+                                <input type="radio" name="rejection_reason" value="Otro" required> 
+                                Otro
+                            </label>
+                            
+                            <label style="display: block; margin: 20px 0 5px 0; font-weight: bold;">
+                                Explica la situación: <span style="color: red;">*</span>
+                            </label>
+                            <textarea name="rejection_notes" rows="3" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                            
+                            <div style="margin-top: 20px; text-align: right;">
+                                <button type="button" onclick="document.getElementById('modal').remove()" 
+                                        style="padding: 10px 20px; margin-right: 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    Volver
+                                </button>
+                                <button type="submit" 
+                                        style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    ❌ Confirmar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+    </script>
 </body>
 </html>

@@ -257,69 +257,68 @@ class Vacancy {
     // ========================================================================
     
     /**
-     * Aprobar una vacante
-     * 
-     * @param int $vacancy_id ID de la vacante
-     * @param int $reviewer_id ID del usuario UPIS que aprueba
-     * @return bool
-     */
-    public function approve($vacancy_id, $reviewer_id) {
-        $sql = "UPDATE vacancies 
-                SET status = 'approved',
-                    approved_at = NOW(),
-                    approved_by = :reviewer_id
-                WHERE id = :vacancy_id 
-                  AND status = 'pending'";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-        $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
+ * Aprobar una vacante
+ * 
+ * @param int $vacancy_id ID de la vacante
+ * @param int $reviewer_id ID del usuario UPIS que aprueba
+ * @return bool
+ */
+public function approve($vacancy_id, $reviewer_id) {
+    $sql = "UPDATE vacancies 
+            SET status = 'approved',
+                approved_at = NOW(),
+                approved_by = :reviewer_id
+            WHERE id = :vacancy_id 
+              AND status = 'pending'";
     
-    /**
-     * Rechazar una vacante con feedback
-     * 
-     * @param int $vacancy_id ID de la vacante
-     * @param string $feedback Razón del rechazo
-     * @param int $reviewer_id ID del usuario UPIS que rechaza
-     * @return bool
-     */
-    public function reject($vacancy_id, $feedback, $reviewer_id) {
-        $sql = "UPDATE vacancies 
-                SET status = 'rejected',
-                    feedback = :feedback,
-                    approved_by = :reviewer_id,
-                    approved_at = NOW()
-                WHERE id = :vacancy_id 
-                  AND status = 'pending'";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-        $stmt->bindParam(':feedback', $feedback);
-        $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+    $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
     
-    /**
-     * Eliminar una vacante (soft delete - cambiar a rejected)
-     * 
-     * @param int $vacancy_id
-     * @return bool
-     */
-    public function delete($vacancy_id) {
-        $sql = "UPDATE vacancies 
-                SET status = 'rejected',
-                    feedback = 'Vacante eliminada por la empresa'
-                WHERE id = :vacancy_id";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
+    return $stmt->execute();
+}
+    
+   /**
+ * Rechazar una vacante
+ * El feedback se envía por email, no se guarda en BD
+ * 
+ * @param int $vacancy_id ID de la vacante
+ * @param int $reviewer_id ID del usuario UPIS que rechaza
+ * @return bool
+ */
+public function reject($vacancy_id, $reviewer_id) {
+    $sql = "UPDATE vacancies 
+            SET status = 'rejected',
+                approved_at = NOW(),
+                approved_by = :reviewer_id
+            WHERE id = :vacancy_id 
+              AND status = 'pending'";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+    $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+    
+    return $stmt->execute();
+}
+    
+   /**
+ * Eliminar una vacante (soft delete - cambiar a rejected)
+ * Sin feedback en BD, se notifica por email
+ * 
+ * @param int $vacancy_id
+ * @return bool
+ */
+public function delete($vacancy_id) {
+    $sql = "UPDATE vacancies 
+            SET status = 'rejected',
+                approved_at = NOW()
+            WHERE id = :vacancy_id";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+    
+    return $stmt->execute();
+}
     
     /**
      * Eliminar permanentemente una vacante (hard delete)

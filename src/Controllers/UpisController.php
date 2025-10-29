@@ -241,33 +241,110 @@ public function rejectCompany() {
     exit;
 }
 
-    public function approveVacancy() {
-        $this->session->guard(['upis', 'admin']); // <-- CORREGIDO
-        $vacancy_id = $_GET['id'] ?? null;
-        if ($vacancy_id) {
-            $vacancyModel = new Vacancy();
-            if ($vacancyModel->approve((int)$vacancy_id, $_SESSION['user_id'])) {
-                header('Location: /SIEP/public/index.php?action=reviewVacancies&status=vacancy_approved');
-                exit;
-            }
-        }
-        header('Location: /SIEP/public/index.php?action=reviewVacancies&status=error');
+    /**
+ * Aprobar una vacante
+ */
+/**
+ * Aprobar una vacante
+ */
+public function approveVacancy() {
+    $this->session->guard(['upis', 'admin']);
+    
+    $vacancy_id = (int)($_GET['id'] ?? $_POST['vacancy_id'] ?? 0);
+    $comments = trim($_POST['comments'] ?? '');
+    
+    if (!$vacancy_id) {
+        $_SESSION['error'] = "ID de vacante inválido.";
+        header('Location: /SIEP/public/index.php?action=reviewVacancies');
         exit;
     }
+    
+    $vacancyModel = new Vacancy();
+    $vacancy = $vacancyModel->getVacancyById($vacancy_id);
+    
+    if (!$vacancy) {
+        $_SESSION['error'] = "Vacante no encontrada.";
+        header('Location: /SIEP/public/index.php?action=reviewVacancies');
+        exit;
+    }
+    
+    $reviewer_id = $_SESSION['user_id'];
+    
+    if ($vacancyModel->approve($vacancy_id, $reviewer_id)) {
+        
+        // Enviar email de aprobación
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        $company_data = [
+            'email' => $vacancy['company_email'],
+            'company_name' => $vacancy['company_name']
+        ];
+        
+        $emailService->notifyVacancyApproved($vacancy, $company_data, $comments);
+        
+        $_SESSION['success'] = "✅ Vacante aprobada y notificación enviada por email.";
+    } else {
+        $_SESSION['error'] = "❌ Error al aprobar la vacante.";
+    }
+    
+    header('Location: /SIEP/public/index.php?action=reviewVacancies');
+    exit;
+}
 
-    public function rejectVacancy() {
-        $this->session->guard(['upis', 'admin']); // <-- CORREGIDO
-        $vacancy_id = $_GET['id'] ?? null;
-        if ($vacancy_id) {
-            $vacancyModel = new Vacancy();
-            if ($vacancyModel->deleteById_admin((int)$vacancy_id)) {
-                header('Location: /SIEP/public/index.php?action=reviewVacancies&status=vacancy_rejected');
-                exit;
-            }
-        }
-        header('Location: /SIEP/public/index.php?action=reviewVacancies&status=error');
+/**
+ * Rechazar una vacante
+ */
+public function rejectVacancy() {
+    $this->session->guard(['upis', 'admin']);
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = "Método no permitido.";
+        header('Location: /SIEP/public/index.php?action=reviewVacancies');
         exit;
     }
+    
+    $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+    $rejection_reason = trim($_POST['rejection_reason'] ?? $_POST['comments'] ?? '');
+    
+    if (!$vacancy_id || empty($rejection_reason)) {
+        $_SESSION['error'] = "Debe proporcionar una razón para el rechazo.";
+        header('Location: /SIEP/public/index.php?action=reviewVacancies');
+        exit;
+    }
+    
+    $vacancyModel = new Vacancy();
+    $vacancy = $vacancyModel->getVacancyById($vacancy_id);
+    
+    if (!$vacancy) {
+        $_SESSION['error'] = "Vacante no encontrada.";
+        header('Location: /SIEP/public/index.php?action=reviewVacancies');
+        exit;
+    }
+    
+    $reviewer_id = $_SESSION['user_id'];
+    
+    if ($vacancyModel->reject($vacancy_id, $reviewer_id)) {
+        
+        // Enviar email con razón del rechazo
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        $company_data = [
+            'email' => $vacancy['company_email'],
+            'company_name' => $vacancy['company_name']
+        ];
+        
+        $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_reason);
+        
+        $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.";
+    } else {
+        $_SESSION['error'] = "Error al rechazar la vacante.";
+    }
+    
+    header('Location: /SIEP/public/index.php?action=reviewVacancies');
+    exit;
+}
 
 
     public function processLetterRequests() {

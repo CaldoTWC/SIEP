@@ -503,4 +503,188 @@ UPIS - Unidad Politécnica de Integración Social
 UPIICSA - Instituto Politécnico Nacional
 TEXT;
     }
+
+    // ========================================
+// TEMPLATES PARA VACANTES
+// ========================================
+
+/**
+ * Template HTML: Vacante Aprobada
+ */
+public function vacancyApproved($vacancy_data, $company_data, $comments = '') {
+    $content = "
+        <h2 style='color: #28a745;'>✅ ¡Vacante Aprobada!</h2>
+        
+        <p>Estimado/a equipo de <strong>{$company_data['company_name']}</strong>,</p>
+        
+        <p>Nos complace informarle que su vacante ha sido <strong style='color: #28a745;'>APROBADA</strong> por UPIS.</p>
+        
+        <div class='success-box'>
+            <h3 style='margin-top: 0;'>📋 Detalles de la vacante:</h3>
+            <p style='margin: 5px 0;'><strong>Título:</strong> {$vacancy_data['title']}</p>
+            <p style='margin: 5px 0;'><strong>Modalidad:</strong> {$vacancy_data['modality']}</p>
+            <p style='margin: 5px 0;'><strong>Plazas:</strong> {$vacancy_data['num_vacancies']}</p>
+            <p style='margin: 5px 0;'><strong>Periodo:</strong> " . date('d/m/Y', strtotime($vacancy_data['start_date'])) . " - " . date('d/m/Y', strtotime($vacancy_data['end_date'])) . "</p>
+        </div>
+        
+        " . (!empty($comments) ? "
+        <div class='warning-box'>
+            <strong>💬 Comentarios de UPIS:</strong><br>
+            " . nl2br(htmlspecialchars($comments)) . "
+        </div>
+        " : "") . "
+        
+        <h3>¿Qué sigue?</h3>
+        <ul>
+            <li>Su vacante ya es visible para estudiantes en el catálogo</li>
+            <li>Recibirá notificaciones cuando estudiantes se postulen</li>
+            <li>Puede gestionar postulaciones desde su panel</li>
+        </ul>
+        
+        <p style='text-align: center;'>
+            <a href='http://localhost/SIEP/public/index.php?action=companyDashboard' class='btn'>
+                Ver Mis Vacantes
+            </a>
+        </p>
+    ";
+    
+    return $this->getBaseTemplate($content);
+}
+
+public function vacancyApprovedPlainText($vacancy_data, $company_data, $comments = '') {
+    $text = "VACANTE APROBADA\n\n";
+    $text .= "Estimado/a equipo de {$company_data['company_name']},\n\n";
+    $text .= "Su vacante '{$vacancy_data['title']}' ha sido APROBADA.\n\n";
+    $text .= "Detalles:\n";
+    $text .= "- Modalidad: {$vacancy_data['modality']}\n";
+    $text .= "- Plazas: {$vacancy_data['num_vacancies']}\n";
+    
+    if (!empty($comments)) {
+        $text .= "\nComentarios de UPIS:\n{$comments}\n";
+    }
+    
+    $text .= "\nIngrese a su panel para gestionar la vacante.\n";
+    return $text;
+}
+
+/**
+ * Template HTML: Vacante Rechazada
+ */
+public function vacancyRejected($vacancy_data, $company_data, $rejection_reason) {
+    $content = "
+        <h2 style='color: #f44336;'>⚠️ Vacante Requiere Correcciones</h2>
+        
+        <p>Estimado/a equipo de <strong>{$company_data['company_name']}</strong>,</p>
+        
+        <p>Le informamos que su vacante <strong>{$vacancy_data['title']}</strong> requiere correcciones antes de ser publicada.</p>
+        
+        <div style='background: #ffebee; border-left: 4px solid #f44336; padding: 20px; margin: 20px 0; border-radius: 4px;'>
+            <strong style='color: #c62828;'>📝 Razón del rechazo:</strong><br><br>
+            <div style='background: white; padding: 15px; border-radius: 5px; color: #333;'>
+                " . nl2br(htmlspecialchars($rejection_reason)) . "
+            </div>
+        </div>
+        
+        <h3>¿Qué debe hacer?</h3>
+        <ol>
+            <li>Revise los comentarios de UPIS</li>
+            <li>Corrija la información señalada</li>
+            <li>Publique la vacante nuevamente</li>
+        </ol>
+        
+        <p style='color: #666;'><em>Nota: Esta vacante no será visible para estudiantes hasta que sea aprobada.</em></p>
+        
+        <p style='text-align: center;'>
+            <a href='http://localhost/SIEP/public/index.php?action=showPostVacancyForm' class='btn'>
+                Publicar Nueva Vacante
+            </a>
+        </p>
+    ";
+    
+    return $this->getBaseTemplate($content);
+}
+
+public function vacancyRejectedPlainText($vacancy_data, $company_data, $rejection_reason) {
+    $text = "VACANTE REQUIERE CORRECCIONES\n\n";
+    $text .= "Estimado/a equipo de {$company_data['company_name']},\n\n";
+    $text .= "Su vacante '{$vacancy_data['title']}' requiere correcciones.\n\n";
+    $text .= "Razón del rechazo:\n{$rejection_reason}\n\n";
+    $text .= "Por favor corrija la información y vuelva a publicar.\n";
+    return $text;
+}
+
+/**
+ * Template HTML: Nueva Vacante para UPIS
+ */
+public function newVacancyUPIS($vacancy_data, $company_data) {
+    $content = "
+        <h2 style='color: #005a9c;'>🆕 Nueva Vacante para Revisar</h2>
+        
+        <p>Se ha publicado una nueva vacante que requiere revisión.</p>
+        
+        <div class='info-box'>
+            <p style='margin: 5px 0;'><strong>🏢 Empresa:</strong> {$company_data['company_name']}</p>
+            <p style='margin: 5px 0;'><strong>📋 Vacante:</strong> {$vacancy_data['title']}</p>
+            <p style='margin: 5px 0;'><strong>👥 Plazas:</strong> {$vacancy_data['num_vacancies']}</p>
+            <p style='margin: 5px 0;'><strong>💰 Apoyo:</strong> $" . number_format($vacancy_data['economic_support'], 2) . " MXN/mes</p>
+            <p style='margin: 5px 0;'><strong>📅 Periodo:</strong> " . date('d/m/Y', strtotime($vacancy_data['start_date'])) . " - " . date('d/m/Y', strtotime($vacancy_data['end_date'])) . "</p>
+        </div>
+        
+        <p>Por favor revise y apruebe/rechace la vacante desde el panel de administración.</p>
+        
+        <p style='text-align: center;'>
+            <a href='http://localhost/SIEP/public/index.php?action=reviewVacancies' class='btn'>
+                Revisar Vacante
+            </a>
+        </p>
+    ";
+    
+    return $this->getBaseTemplate($content);
+}
+
+public function newVacancyUPISPlainText($vacancy_data, $company_data) {
+    $text = "NUEVA VACANTE PENDIENTE\n\n";
+    $text .= "Empresa: {$company_data['company_name']}\n";
+    $text .= "Vacante: {$vacancy_data['title']}\n";
+    $text .= "Plazas: {$vacancy_data['num_vacancies']}\n";
+    $text .= "Apoyo: $" . number_format($vacancy_data['economic_support'], 2) . " MXN/mes\n\n";
+    $text .= "Ingrese al panel para revisar.\n";
+    return $text;
+}
+
+/**
+ * Template HTML: Nueva Empresa para UPIS
+ */
+public function newCompanyUPIS($company_data) {
+    $content = "
+        <h2 style='color: #005a9c;'>🏢 Nueva Empresa Registrada</h2>
+        
+        <p>Se ha registrado una nueva empresa que requiere aprobación.</p>
+        
+        <div class='info-box'>
+            <p style='margin: 5px 0;'><strong>Razón Social:</strong> {$company_data['company_name']}</p>
+            <p style='margin: 5px 0;'><strong>RFC:</strong> {$company_data['rfc']}</p>
+            <p style='margin: 5px 0;'><strong>Email:</strong> {$company_data['email']}</p>
+        </div>
+        
+        <p>Por favor revise y apruebe/rechace desde el panel de administración.</p>
+        
+        <p style='text-align: center;'>
+            <a href='http://localhost/SIEP/public/index.php?action=reviewCompanies' class='btn'>
+                Revisar Empresa
+            </a>
+        </p>
+    ";
+    
+    return $this->getBaseTemplate($content);
+}
+
+public function newCompanyUPISPlainText($company_data) {
+    $text = "NUEVA EMPRESA REGISTRADA\n\n";
+    $text .= "Razón Social: {$company_data['company_name']}\n";
+    $text .= "RFC: {$company_data['rfc']}\n";
+    $text .= "Email: {$company_data['email']}\n\n";
+    $text .= "Ingrese al panel para revisar.\n";
+    return $text;
+}
 }
