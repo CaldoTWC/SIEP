@@ -1033,75 +1033,7 @@ public function resetLetterCounters() {
         exit;
     }
     
-    /**
-     * Exportar PDF de vacantes activas
-     */
-    public function exportActivePDF() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $vacancies = $vacancyModel->getVacanciesByStatus('approved');
-        
-        require_once(__DIR__ . '/../Services/ExportService.php');
-        $exportService = new ExportService();
-        $exportService->generateActivePDF($vacancies);
-    }
     
-    /**
-     * Exportar PDF de vacantes completadas
-     */
-    public function exportCompletedPDF() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $vacancies = $vacancyModel->getVacanciesByStatus('completed');
-        
-        require_once(__DIR__ . '/../Services/ExportService.php');
-        $exportService = new ExportService();
-        $exportService->generateCompletedPDF($vacancies);
-    }
-    
-    /**
-     * Exportar PDF de vacantes canceladas
-     */
-    public function exportCanceledPDF() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $vacancies = $vacancyModel->getVacanciesByStatus('rejected');
-        
-        require_once(__DIR__ . '/../Services/ExportService.php');
-        $exportService = new ExportService();
-        $exportService->generateCanceledPDF($vacancies);
-    }
-    
-    /**
-     * Exportar Excel de todas las vacantes
-     */
-    public function exportAllExcel() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $vacancies = $vacancyModel->getAllVacanciesForReports();
-        
-        require_once(__DIR__ . '/../Services/ExportService.php');
-        $exportService = new ExportService();
-        $exportService->generateAllVacanciesExcel($vacancies);
-    }
-    
-    /**
-     * Exportar Excel de análisis de empresas
-     */
-    public function exportCompanyAnalysisExcel() {
-        $this->session->guard(['upis', 'admin']);
-        
-        $vacancyModel = new Vacancy();
-        $companies = $vacancyModel->getVacanciesGroupedByCompany();
-        
-        require_once(__DIR__ . '/../Services/ExportService.php');
-        $exportService = new ExportService();
-        $exportService->generateCompanyAnalysisExcel($companies);
-    }
 
 
 }

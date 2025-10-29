@@ -2,58 +2,134 @@
 /**
  * Controlador para generación de reportes
  * Maneja la lógica de negocio y exportación de reportes
+ * 
+ * @package SIEP\Controllers
+ * @version 2.0.0 - Integración de reportes de vacantes
  */
 
-session_start();
-require_once(__DIR__ . '/../Models/Report.php');
-require_once(__DIR__ . '/../../vendor/init_libraries.php');
+require_once(__DIR__ . '/../Lib/Session.php');
+require_once(__DIR__ . '/../Models/Vacancy.php');
 
 class ReportController {
     private $reportModel;
+    private $session;
     
     public function __construct() {
-        // Verificar que el usuario esté autenticado
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: /SIEP/public/index.php?page=login&error=not_logged_in');
-            exit;
+        $this->session = new Session();
+        
+        // Cargar Report model solo si existe (para reportes legacy)
+        if (file_exists(__DIR__ . '/../Models/Report.php')) {
+            require_once(__DIR__ . '/../Models/Report.php');
+            $this->reportModel = new Report();
         }
-        
-        // Verificar que sea UPIS (usar user_role en lugar de role)
-        $user_role = $_SESSION['user_role'] ?? '';
-        $allowed_roles = ['upis', 'admin', 'UPIS', 'Admin', 'Upis'];
-        
-        if (!in_array($user_role, $allowed_roles)) {
-            // Si no es UPIS, redirigir según su rol
-            $error_msg = "Acceso denegado. Solo usuarios UPIS pueden acceder a reportes.";
-            
-            switch ($user_role) {
-                case 'estudiante':
-                    header('Location: /SIEP/public/index.php?page=student_dashboard&error=' . urlencode($error_msg));
-                    break;
-                case 'empresa':
-                    header('Location: /SIEP/public/index.php?page=company_dashboard&error=' . urlencode($error_msg));
-                    break;
-                default:
-                    header('Location: /SIEP/public/index.php?error=' . urlencode($error_msg));
-            }
-            exit;
-        }
-        
-        $this->reportModel = new Report();
     }
+    
+    // ========================================================================
+    // REPORTES DE VACANTES (NUEVO SISTEMA)
+    // ========================================================================
+    
+    /**
+     * Exportar PDF de vacantes activas
+     */
+    public function exportActivePDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('approved');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateActivePDF($vacancies);
+    }
+    
+    /**
+     * Exportar PDF de vacantes completadas
+     */
+    public function exportCompletedPDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('completed');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCompletedPDF($vacancies);
+    }
+    
+    /**
+     * Exportar PDF de vacantes canceladas
+     */
+    public function exportCanceledPDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('rejected');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCanceledPDF($vacancies);
+    }
+    
+    /**
+     * Exportar Excel de todas las vacantes
+     */
+    public function exportAllExcel() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getAllVacanciesForReports();
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateAllVacanciesExcel($vacancies);
+    }
+    
+    /**
+     * Exportar Excel de análisis de empresas
+     */
+    public function exportCompanyAnalysisExcel() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $companies = $vacancyModel->getVacanciesGroupedByCompany();
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCompanyAnalysisExcel($companies);
+    }
+    
+    // ========================================================================
+    // REPORTES LEGACY (SISTEMA ANTIGUO - MANTENER)
+    // ========================================================================
     
     /**
      * Dashboard ejecutivo
      */
     public function dashboard() {
-        $stats = $this->reportModel->getDashboardStats();
-        require_once(__DIR__ . '/../Views/reports/dashboard.php');
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($this->reportModel) {
+            $stats = $this->reportModel->getDashboardStats();
+            require_once(__DIR__ . '/../Views/reports/dashboard.php');
+        } else {
+            $_SESSION['error'] = "Modelo de reportes no disponible.";
+            header('Location: /SIEP/public/index.php?action=upisDashboard');
+            exit;
+        }
     }
     
     /**
      * Historial de estancias
      */
     public function estancias() {
+        $this->session->guard(['upis', 'admin']);
+        
+        if (!$this->reportModel) {
+            $_SESSION['error'] = "Modelo de reportes no disponible.";
+            header('Location: /SIEP/public/index.php?action=upisDashboard');
+            exit;
+        }
+        
         $filtros = [
             'carrera' => $_GET['carrera'] ?? '',
             'fecha_inicio' => $_GET['fecha_inicio'] ?? '',
@@ -77,25 +153,50 @@ class ReportController {
     }
     
     /**
-     * Reporte de vacantes
+     * Reporte de vacantes (legacy - mantener si existe)
      */
     public function vacantes() {
-        $vacantes = $this->reportModel->getVacantesActivas();
-        require_once(__DIR__ . '/../Views/reports/vacantes.php');
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($this->reportModel) {
+            $vacantes = $this->reportModel->getVacantesActivas();
+            require_once(__DIR__ . '/../Views/reports/vacantes.php');
+        } else {
+            // Redirigir al nuevo sistema
+            header('Location: /SIEP/public/index.php?action=vacancyHub');
+            exit;
+        }
     }
     
     /**
      * Reporte de empresas
      */
     public function empresas() {
-        $empresas = $this->reportModel->getEmpresasConEstudiantes();
-        require_once(__DIR__ . '/../Views/reports/empresas.php');
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($this->reportModel) {
+            $empresas = $this->reportModel->getEmpresasConEstudiantes();
+            require_once(__DIR__ . '/../Views/reports/empresas.php');
+        } else {
+            $_SESSION['error'] = "Modelo de reportes no disponible.";
+            header('Location: /SIEP/public/index.php?action=upisDashboard');
+            exit;
+        }
     }
     
     /**
      * Exportar estancias a PDF
      */
     private function exportEstanciasPDF($estancias) {
+        // Verificar si TCPDF está disponible
+        if (!file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+            $_SESSION['error'] = "Librería TCPDF no disponible.";
+            header('Location: /SIEP/public/index.php?action=showHistory');
+            exit;
+        }
+        
+        require_once(__DIR__ . '/../../vendor/autoload.php');
+        
         $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8');
         
         // Configuración del documento
@@ -166,6 +267,15 @@ class ReportController {
      * Exportar estancias a Excel
      */
     private function exportEstanciasExcel($estancias) {
+        // Verificar si PhpSpreadsheet está disponible
+        if (!file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+            $_SESSION['error'] = "Librería PhpSpreadsheet no disponible.";
+            header('Location: /SIEP/public/index.php?action=showHistory');
+            exit;
+        }
+        
+        require_once(__DIR__ . '/../../vendor/autoload.php');
+        
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         
@@ -225,25 +335,4 @@ class ReportController {
         
         $writer->save('php://output');
     }
-}
-
-// Enrutamiento básico
-$action = $_GET['action'] ?? 'dashboard';
-$controller = new ReportController();
-
-switch ($action) {
-    case 'dashboard':
-        $controller->dashboard();
-        break;
-    case 'estancias':
-        $controller->estancias();
-        break;
-    case 'vacantes':
-        $controller->vacantes();
-        break;
-    case 'empresas':
-        $controller->empresas();
-        break;
-    default:
-        $controller->dashboard();
 }

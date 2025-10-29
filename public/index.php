@@ -229,31 +229,31 @@ switch ($action) {
         $upisController->hardDeleteVacancy();
         break;
     
-    // --- Reportes y Estadísticas (NUEVO) ---
+        // --- Reportes y Estadísticas (ACTUALIZADO) ---
     case 'exportActivePDF':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->exportActivePDF();
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportActivePDF();
         break;
     case 'exportCompletedPDF':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->exportCompletedPDF();
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportCompletedPDF();
         break;
     case 'exportCanceledPDF':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->exportCanceledPDF();
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportCanceledPDF();
         break;
     case 'exportAllExcel':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->exportAllExcel();
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportAllExcel();
         break;
     case 'exportCompanyAnalysisExcel':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->exportCompanyAnalysisExcel();
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportCompanyAnalysisExcel();
         break;
     
     // --- Gestión de Cartas ---
@@ -353,6 +353,13 @@ switch ($action) {
         require_once(__DIR__ . '/../src/Controllers/ProfileController.php');
         $profileController = new ProfileController();
         $profileController->changePassword();
+        break;
+
+        // --- Dashboard de Reportes ---
+    case 'reportDashboard':
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->dashboard();
         break;
 
     // --- RUTA POR DEFECTO ---

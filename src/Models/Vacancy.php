@@ -514,25 +514,22 @@ public function getVacanciesByStatus($status) {
                 c.company_name,
                 c.rfc,
                 u.email as company_email,
-                u.phone as company_phone,
+                u.phone_number as company_phone,
                 CONCAT(reviewer.first_name, ' ', reviewer.last_name_p, ' ', reviewer.last_name_m) as reviewer_name
             FROM vacancies v
-            INNER JOIN company_profiles c ON v.company_id = c.user_id
-            INNER JOIN users u ON v.company_id = u.id
-            LEFT JOIN users reviewer ON v.reviewed_by = reviewer.id
+            INNER JOIN company_profiles c ON v.company_profile_id = c.id
+            INNER JOIN users u ON c.contact_person_user_id = u.id
+            LEFT JOIN users reviewer ON v.approved_by = reviewer.id
             WHERE v.status = :status
             ORDER BY v.posted_at DESC";
     
-    $stmt = $this->db->prepare($sql);
+    $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':status', $status, PDO::PARAM_STR);
     $stmt->execute();
     
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
     
-    /**
- * Obtener todas las vacantes para reportes
- */
 public function getAllVacanciesForReports() {
     $sql = "SELECT 
                 v.*,
@@ -541,12 +538,12 @@ public function getAllVacanciesForReports() {
                 u.email as company_email,
                 CONCAT(reviewer.first_name, ' ', reviewer.last_name_p, ' ', reviewer.last_name_m) as reviewer_name
             FROM vacancies v
-            INNER JOIN company_profiles c ON v.company_id = c.user_id
-            INNER JOIN users u ON v.company_id = u.id
-            LEFT JOIN users reviewer ON v.reviewed_by = reviewer.id
+            INNER JOIN company_profiles c ON v.company_profile_id = c.id
+            INNER JOIN users u ON c.contact_person_user_id = u.id
+            LEFT JOIN users reviewer ON v.approved_by = reviewer.id
             ORDER BY v.posted_at DESC";
     
-    $stmt = $this->db->prepare($sql);
+    $stmt = $this->conn->prepare($sql);
     $stmt->execute();
     
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
