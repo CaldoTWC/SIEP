@@ -9,7 +9,8 @@
  * - Consultas de perfiles
  * 
  * @package SIEP\Models
- * @version 2.0.0 - Corregido para nueva estructura de BD
+ * @version 3.0.0 - Agregados métodos createUser, emailExists y createCompanyProfile
+ * @date 2025-10-29
  */
 
 require_once(__DIR__ . '/../Config/Database.php');
@@ -260,33 +261,131 @@ class User {
     }
     
     // ========================================================================
-    // MÉTODOS DE GESTIÓN DE EMPRESAS (UPIS)
+    // NUEVOS MÉTODOS AGREGADOS (2025-10-29)
     // ========================================================================
     
     /**
-     * Obtiene todas las empresas con status 'pending'
+     * Crear un nuevo usuario (genérico)
+     * Utilizado por AuthController para registros más flexibles
      * 
-     * CAMBIO: Usa status 'pending' (antes era 'pending_approval')
-     * 
-     * @return array Lista de empresas pendientes de aprobación
+     * @param array $data Datos del usuario
+     * @return int|false ID del usuario creado o false en caso de error
      */
-    public function getPendingCompanies() {
-        $sql = "SELECT 
-                    u.id, u.email, u.first_name, u.last_name_p, u.last_name_m,
-                    u.phone_number, u.status, u.created_at,
-                    cp.company_name, cp.commercial_name, cp.rfc, 
-                    cp.business_area, cp.company_type
-                FROM users u
-                JOIN company_profiles cp ON u.id = cp.contact_person_user_id
-                WHERE u.role = 'company' 
-                  AND u.status = 'pending'
-                ORDER BY u.created_at ASC";
+    public function createUser($data) {
+        $sql = "INSERT INTO users 
+                (email, password, first_name, last_name_p, last_name_m, 
+                 phone_number, role, status) 
+                VALUES 
+                (:email, :password, :first_name, :last_name_p, :last_name_m, 
+                 :phone_number, :role, :status)";
         
         $stmt = $this->conn->prepare($sql);
+        
+        $stmt->bindParam(':email', $data['email']);
+        $stmt->bindParam(':password', $data['password']);
+        $stmt->bindParam(':first_name', $data['first_name']);
+        $stmt->bindParam(':last_name_p', $data['last_name_p']);
+        $stmt->bindParam(':last_name_m', $data['last_name_m']);
+        $stmt->bindParam(':phone_number', $data['phone_number']);
+        $stmt->bindParam(':role', $data['role']);
+        $stmt->bindParam(':status', $data['status']);
+        
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Verificar si un email ya existe en el sistema
+     * 
+     * @param string $email Email a verificar
+     * @return bool True si existe, false si no
+     */
+    public function emailExists($email) {
+        $sql = "SELECT id FROM users WHERE email = :email LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':email', $email);
         $stmt->execute();
         
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
+    
+    /**
+     * Crear perfil de empresa (método público separado)
+     * Utilizado por AuthController para separar la creación de usuario y perfil
+     * 
+     * @param array $data Datos del perfil de empresa
+     * @return bool True si fue exitoso, false si falla
+     */
+    public function createCompanyProfile($data) {
+        $sql = "INSERT INTO company_profiles 
+                (company_name, commercial_name, business_area, company_type, 
+                 rfc, company_description, website, tax_id_url, employee_count, 
+                 student_programs, contact_person_user_id, contact_person_position) 
+                VALUES 
+                (:company_name, :commercial_name, :business_area, :company_type, 
+                 :rfc, :company_description, :website, :tax_id_url, :employee_count, 
+                 :student_programs, :contact_person_user_id, :contact_person_position)";
+        
+        $stmt = $this->conn->prepare($sql);
+        
+        $stmt->bindParam(':company_name', $data['company_name']);
+        $stmt->bindParam(':commercial_name', $data['commercial_name']);
+        $stmt->bindParam(':business_area', $data['business_area']);
+        $stmt->bindParam(':company_type', $data['company_type']);
+        $stmt->bindParam(':rfc', $data['rfc']);
+        $stmt->bindParam(':company_description', $data['company_description']);
+        $stmt->bindParam(':website', $data['website']);
+        $stmt->bindParam(':tax_id_url', $data['tax_id_url']);
+        $stmt->bindParam(':employee_count', $data['employee_count']);
+        $stmt->bindParam(':student_programs', $data['student_programs']);
+        $stmt->bindParam(':contact_person_user_id', $data['contact_person_user_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':contact_person_position', $data['contact_person_position']);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+ * Obtiene todas las empresas con status 'pending'
+ * 
+ * @return array Lista de empresas pendientes de aprobación con toda la información
+ */
+public function getPendingCompanies() {
+    $sql = "SELECT 
+                u.id, 
+                u.id as user_id,
+                u.email, 
+                u.first_name, 
+                u.last_name_p, 
+                u.last_name_m,
+                u.phone_number, 
+                u.status, 
+                u.created_at,
+                cp.id as company_profile_id,
+                cp.company_name, 
+                cp.commercial_name, 
+                cp.rfc, 
+                cp.company_description,
+                cp.business_area, 
+                cp.company_type,
+                cp.website,
+                cp.tax_id_url,
+                cp.employee_count,
+                cp.student_programs,
+                cp.contact_person_position
+            FROM users u
+            JOIN company_profiles cp ON u.id = cp.contact_person_user_id
+            WHERE u.role = 'company' 
+              AND u.status = 'pending'
+            ORDER BY u.created_at ASC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     
     /**
      * Aprueba una empresa (cambia status a 'active')

@@ -50,7 +50,7 @@ $session->guard(['student']);
         <p>Este es tu panel de control. Desde aquí puedes gestionar tus trámites de Estancia Profesional.</p>
 
         <div class="menu-buttons">
-            <a href="/SIEP/public/index.php?action=listVacancies" class="btn">Ver Catálogo de Vacantes</a>
+            <a href="/SIEP/public/index.php?action=showVacancies" class="btn" style="background-color: #005a9c;">💼 Ver Vacantes Disponibles</a>
             <!-- ENLACE CORREGIDO -->
             <a href="/SIEP/public/index.php?action=showDetailedLetterForm" class="btn">Solicitar Carta de Presentación</a>
             <a href="/SIEP/public/index.php?action=showMyDocuments" class="btn">Mis Documentos Emitidos</a>

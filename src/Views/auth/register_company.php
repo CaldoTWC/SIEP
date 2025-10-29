@@ -93,9 +93,15 @@
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Contraseña para la Cuenta:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
+    <label for="password">Contraseña para la Cuenta:</label>
+    <input type="password" id="password" name="password" required minlength="8">
+    <small style="color: #666;">Mínimo 8 caracteres</small>
+</div>
+
+<div class="form-group">
+    <label for="password_confirm">Confirmar Contraseña:</label>
+    <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
+</div>
 
             <div class="form-group">
                 <label>Aviso de Privacidad:</label>

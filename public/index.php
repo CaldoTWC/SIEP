@@ -1,5 +1,6 @@
 <?php
-// Archivo: public/index.php (Versión Completa y Corregida)
+// Archivo: public/index.php (Versión Actualizada con nuevas rutas de vacantes)
+// Actualización: 2025-10-29 - Agregadas rutas para visualización completa de vacantes
 date_default_timezone_set('America/Mexico_City');
 $action = $_GET['action'] ?? 'home';
 
@@ -67,6 +68,12 @@ switch ($action) {
         require_once(__DIR__ . '/../src/Controllers/StudentController.php');
         $studentController = new StudentController();
         $studentController->listVacancies();
+        break;
+    case 'showVacancies':
+        // NUEVA RUTA: Vista completa de vacantes para estudiantes
+        require_once(__DIR__ . '/../src/Controllers/StudentController.php');
+        $studentController = new StudentController();
+        $studentController->showVacancies();
         break;
     case 'showDetailedLetterForm':
         require_once(__DIR__ . '/../src/Controllers/StudentController.php');

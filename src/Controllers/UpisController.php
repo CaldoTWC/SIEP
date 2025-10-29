@@ -90,59 +90,90 @@ class UpisController {
     // ACCIONES DE GESTIÓN DE EMPRESAS
     // ========================================================================
 
-    /**
+/**
  * Aprueba una empresa (cambia status de 'pending' a 'active')
  */
 public function approveCompany() {
     $this->session->guard(['upis', 'admin']);
     
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $company_id = (int)$_POST['company_id'];
-        $comments = trim($_POST['comments'] ?? '');
-        
-        if ($company_id) {
-            $userModel = new User();
-            
-            if ($userModel->approveUser($company_id)) {
-                
-                // ========================================
-                // 🆕 ENVIAR NOTIFICACIÓN A LA EMPRESA
-                // ========================================
-                
-                require_once(__DIR__ . '/../Services/EmailService.php');
-                $emailService = new EmailService();
-                
-                // Obtener datos de la empresa
-                $company = $userModel->findById($company_id);
-                $company_profile = $userModel->getCompanyProfileByUserId($company_id);
-                
-                $company_data = [
-                    'user_id' => $company_id,
-                    'contact_name' => $company['first_name'] . ' ' . 
-                                     $company['last_name_p'] . ' ' . 
-                                     $company['last_name_m'],
-                    'company_name' => $company_profile['company_name'] ?? 'N/A',
-                    'rfc' => $company_profile['rfc'] ?? 'N/A',
-                    'email' => $company['email']
-                ];
-                
-                // Enviar notificación de aprobación
-                $emailService->notifyCompanyStatus($company_data, 'approved', $comments);
-                
-                // ========================================
-                // FIN DE NOTIFICACIONES
-                // ========================================
-                
-                $_SESSION['success'] = "Empresa aprobada correctamente y notificada por email.";
-                header('Location: /SIEP/public/index.php?action=reviewCompanies');
-                exit;
-            }
-        }
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = "Método no permitido.";
+        header('Location: /SIEP/public/index.php?action=reviewCompanies');
+        exit;
     }
     
-    $_SESSION['error'] = "Error al aprobar la empresa.";
-    header('Location: /SIEP/public/index.php?action=reviewCompanies');
-    exit;
+    $company_id = (int)($_POST['company_id'] ?? 0);
+    $comments = trim($_POST['comments'] ?? '');
+    
+    if (!$company_id) {
+        $_SESSION['error'] = "ID de empresa no válido.";
+        header('Location: /SIEP/public/index.php?action=reviewCompanies');
+        exit;
+    }
+    
+    $userModel = new User();
+    
+    // Aprobar la empresa (cambia status de 'pending' a 'active')
+    if ($userModel->approveUser($company_id)) {
+        
+        // ========================================
+        // OPCIONAL: ENVIAR NOTIFICACIÓN POR EMAIL
+        // ========================================
+        // Si quieres enviar un correo de confirmación, descomenta esto:
+        /*
+        try {
+            $company_data = $userModel->getCompanyProfileByUserId($company_id);
+            
+            if ($company_data && !empty($company_data['email'])) {
+                require_once(__DIR__ . '/../Lib/Mailer.php');
+                
+                $subject = "✅ Su empresa ha sido aprobada - SIEP UPIS";
+                
+                $message = "
+                    <h2 style='color: #4caf50;'>¡Felicidades!</h2>
+                    <p>Estimado/a <strong>{$company_data['first_name']} {$company_data['last_name_p']}</strong>,</p>
+                    
+                    <p>Nos complace informarle que su empresa <strong>{$company_data['company_name']}</strong> 
+                    ha sido <strong style='color: #4caf50;'>APROBADA</strong> en el sistema SIEP.</p>
+                    
+                    <p>Ya puede iniciar sesión y comenzar a publicar vacantes para estudiantes.</p>
+                    
+                    " . (!empty($comments) ? "<p><strong>Comentarios de UPIS:</strong><br>" . nl2br(htmlspecialchars($comments)) . "</p>" : "") . "
+                    
+                    <p>
+                        <a href='http://localhost/SIEP/public/index.php?action=showLogin' 
+                           style='display: inline-block; padding: 12px 24px; background: #4caf50; color: white; 
+                                  text-decoration: none; border-radius: 5px; margin-top: 10px;'>
+                            Iniciar Sesión
+                        </a>
+                    </p>
+                    
+                    <hr style='margin: 20px 0; border: none; border-top: 1px solid #ddd;'>
+                    <p style='color: #666; font-size: 12px;'>
+                        Este es un mensaje automático del Sistema Integral de Estancias Profesionales (SIEP) - UPIS ESCOM IPN
+                    </p>
+                ";
+                
+                mailer_send($company_data['email'], $subject, $message);
+            }
+        } catch (Exception $e) {
+            error_log("Error al enviar email de aprobación: " . $e->getMessage());
+            // No detenemos el proceso si falla el email
+        }
+        */
+        // ========================================
+        // FIN DE NOTIFICACIONES
+        // ========================================
+        
+        $_SESSION['success'] = "✅ Empresa aprobada correctamente.";
+        header('Location: /SIEP/public/index.php?action=reviewCompanies');
+        exit;
+        
+    } else {
+        $_SESSION['error'] = "❌ Error al aprobar la empresa. Intente nuevamente.";
+        header('Location: /SIEP/public/index.php?action=reviewCompanies');
+        exit;
+    }
 }
 
 /**

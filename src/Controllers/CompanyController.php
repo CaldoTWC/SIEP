@@ -46,36 +46,101 @@ class CompanyController {
     }
 
     /**
-     * Procesa los datos del formulario de nueva vacante y la guarda.
-     */
-    public function postVacancy() {
-        $this->session->guard(['company']);
+ * Procesa los datos del formulario de nueva vacante y la guarda.
+ */
+public function postVacancy() {
+    $this->session->guard(['company']);
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['title'])) {
-            // Manejar error de forma más elegante en el futuro
-            die("Error: Faltan datos o método incorrecto.");
-        }
-        
-        $vacancy = new Vacancy();
-        $company_profile_id = $this->getCompanyProfileId($_SESSION['user_id']);
-
-        if (!$company_profile_id) {
-            die("Error: No se pudo encontrar el perfil de la empresa asociado a este usuario.");
-        }
-
-        $vacancy->company_profile_id = $company_profile_id;
-        $vacancy->title = $_POST['title'];
-        $vacancy->description = $_POST['description'];
-        $vacancy->activities = $_POST['activities'];
-        $vacancy->modality = $_POST['modality'];
-        
-        if ($vacancy->create()) {
-            header('Location: /SIEP/public/index.php?action=companyDashboard&status=vacancy_posted');
-            exit;
-        } else {
-            die("Hubo un error al publicar la vacante.");
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        die("Error: Método incorrecto.");
+    }
+    
+    // Validar campos obligatorios básicos
+    $required_fields = ['title', 'description', 'num_vacancies', 'economic_support', 
+                       'start_date', 'end_date', 'related_career', 'required_knowledge',
+                       'activity_1', 'activity_2', 'activity_3', 'activity_4', 'activity_5',
+                       'modality', 'privacy_accepted'];
+    
+    foreach ($required_fields as $field) {
+        if (empty($_POST[$field]) && $_POST[$field] !== '0') {
+            die("Error: El campo {$field} es obligatorio.");
         }
     }
+    
+    // Validar que se hayan aceptado las políticas
+    if (!isset($_POST['privacy_accepted']) || $_POST['privacy_accepted'] !== 'on') {
+        die("Error: Debe aceptar el aviso de privacidad.");
+    }
+    
+    $vacancy = new Vacancy();
+    $company_profile_id = $this->getCompanyProfileId($_SESSION['user_id']);
+
+    if (!$company_profile_id) {
+        die("Error: No se pudo encontrar el perfil de la empresa asociado a este usuario.");
+    }
+
+    // Asignar datos básicos
+    $vacancy->company_profile_id = $company_profile_id;
+    $vacancy->title = trim($_POST['title']);
+    $vacancy->description = trim($_POST['description']);
+    $vacancy->activities = trim($_POST['activities'] ?? ''); // Campo legacy, opcional
+    $vacancy->modality = $_POST['modality'];
+    
+    // ATENCIÓN A ESTUDIANTES INTERESADOS
+    $attention_days_array = $_POST['attention_days'] ?? [];
+    $vacancy->attention_days = !empty($attention_days_array) ? json_encode($attention_days_array) : null;
+    $vacancy->attention_schedule = trim($_POST['attention_schedule'] ?? '');
+    
+    // GENERALIDADES DE LA POSTULACIÓN
+    $vacancy->num_vacancies = (int)$_POST['num_vacancies'];
+    $vacancy->vacancy_names = trim($_POST['vacancy_names'] ?? '');
+    $vacancy->economic_support = !empty($_POST['economic_support']) ? (float)$_POST['economic_support'] : null;
+    $vacancy->start_date = $_POST['start_date'];
+    $vacancy->end_date = $_POST['end_date'];
+    
+    // PERFIL PARA OCUPAR LA VACANTE
+    $vacancy->key_information = trim($_POST['key_information'] ?? '');
+    $vacancy->related_career = trim($_POST['related_career']);
+    $vacancy->required_knowledge = trim($_POST['required_knowledge']);
+    $vacancy->required_competencies = trim($_POST['required_competencies'] ?? '');
+    
+    // Idiomas requeridos (array a JSON)
+    $languages_array = $_POST['required_languages'] ?? [];
+    $vacancy->required_languages = !empty($languages_array) ? json_encode($languages_array) : null;
+    
+    // ACTIVIDADES A REALIZAR (CAMPO ÚNICO)
+$vacancy->activities_list = trim($_POST['activities_list']);
+$vacancy->activity_details = trim($_POST['activity_details'] ?? ''); // Opcional
+    
+    // MODALIDAD EN QUE SE DESARROLLARÁN LAS ACTIVIDADES
+    if ($_POST['modality'] === 'Presencial' || $_POST['modality'] === 'Hibrida') {
+        $vacancy->work_location_address = trim($_POST['work_location_address'] ?? '');
+    } else {
+        $vacancy->work_location_address = null;
+    }
+    
+    // Días de trabajo (array a JSON)
+    $work_days_array = $_POST['work_days'] ?? [];
+    $vacancy->work_days = !empty($work_days_array) ? json_encode($work_days_array) : null;
+    
+    $vacancy->start_time = !empty($_POST['start_time']) ? $_POST['start_time'] : null;
+    $vacancy->end_time = !empty($_POST['end_time']) ? $_POST['end_time'] : null;
+    
+    // PUBLICACIÓN DE LOGOTIPOS
+    $vacancy->logo_auth = isset($_POST['logo_auth']) && $_POST['logo_auth'] === 'on' ? 1 : 0;
+    $vacancy->logo_url = trim($_POST['logo_url'] ?? '');
+    
+    // AVISO DE PRIVACIDAD
+    $vacancy->privacy_accepted = 1; // Ya validamos arriba que fue aceptado
+    
+    // Intentar crear la vacante
+    if ($vacancy->create()) {
+        header('Location: /SIEP/public/index.php?action=companyDashboard&status=vacancy_posted');
+        exit;
+    } else {
+        die("Hubo un error al publicar la vacante. Por favor, intente nuevamente.");
+    }
+}
 
     // ===================================================================
     // --- MÉTODOS PARA LA CARTA DE ACEPTACIÓN ---
