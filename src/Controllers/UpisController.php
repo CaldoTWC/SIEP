@@ -872,5 +872,246 @@ public function resetLetterCounters() {
     exit;
 }
 
+    // ========================================================================
+    // GESTIÓN DE CICLO DE VIDA DE VACANTES (NUEVO)
+    // ========================================================================
+    
+    /**
+     * Hub principal de gestión de vacantes
+     */
+    public function hub() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $stats = $vacancyModel->getGlobalStatistics();
+        
+        require_once(__DIR__ . '/../Views/upis/hub.php');
+    }
+    
+    /**
+     * Gestionar vacantes activas (approved)
+     */
+    public function manageActiveVacancies() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $activeVacancies = $vacancyModel->getVacanciesByStatus('approved');
+        
+        require_once(__DIR__ . '/../Views/upis/manage_active_vacancies.php');
+    }
+    
+    /**
+     * Tumbar una vacante activa (solo UPIS)
+     */
+    public function takedownVacancy() {
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = "Método no permitido.";
+            header('Location: /SIEP/public/index.php?action=manageActiveVacancies');
+            exit;
+        }
+        
+        $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+        $rejection_notes = trim($_POST['rejection_notes'] ?? '');
+        
+        if (!$vacancy_id || empty($rejection_notes)) {
+            $_SESSION['error'] = "❌ Debes proporcionar una justificación para tumbar la vacante.";
+            header('Location: /SIEP/public/index.php?action=manageActiveVacancies');
+            exit;
+        }
+        
+        $vacancyModel = new Vacancy();
+        $vacancy = $vacancyModel->getVacancyById($vacancy_id);
+        
+        if (!$vacancy || $vacancy['status'] !== 'approved') {
+            $_SESSION['error'] = "Vacante no encontrada o no está activa.";
+            header('Location: /SIEP/public/index.php?action=manageActiveVacancies');
+            exit;
+        }
+        
+        $reviewer_id = $_SESSION['user_id'];
+        
+        if ($vacancyModel->takedown($vacancy_id, $reviewer_id, $rejection_notes)) {
+            
+            // Notificar a la empresa
+            require_once(__DIR__ . '/../Services/EmailService.php');
+            $emailService = new EmailService();
+            
+            $company_data = [
+                'email' => $vacancy['company_email'],
+                'company_name' => $vacancy['company_name']
+            ];
+            
+            $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
+            
+            $_SESSION['success'] = "⚠️ Vacante desactivada y empresa notificada.";
+        } else {
+            $_SESSION['error'] = "❌ Error al desactivar la vacante.";
+        }
+        
+        header('Location: /SIEP/public/index.php?action=manageActiveVacancies');
+        exit;
+    }
+    
+    /**
+     * Papelera de vacantes rechazadas
+     */
+    public function vacancyTrash() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $rejectedVacancies = $vacancyModel->getVacanciesByStatus('rejected');
+        $stats = $vacancyModel->getTrashStatistics();
+        
+        require_once(__DIR__ . '/../Views/upis/vacancy_trash.php');
+    }
+    
+    /**
+     * Restaurar una vacante rechazada
+     */
+    public function restoreVacancy() {
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = "Método no permitido.";
+            header('Location: /SIEP/public/index.php?action=vacancyTrash');
+            exit;
+        }
+        
+        $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+        
+        if (!$vacancy_id) {
+            $_SESSION['error'] = "ID de vacante inválido.";
+            header('Location: /SIEP/public/index.php?action=vacancyTrash');
+            exit;
+        }
+        
+        $vacancyModel = new Vacancy();
+        
+        if ($vacancyModel->restore($vacancy_id)) {
+            $_SESSION['success'] = "♻️ Vacante restaurada a estado pendiente.";
+        } else {
+            $_SESSION['error'] = "❌ Error al restaurar la vacante.";
+        }
+        
+        header('Location: /SIEP/public/index.php?action=vacancyTrash');
+        exit;
+    }
+    
+    /**
+     * Eliminar permanentemente una vacante (hard delete)
+     */
+    public function hardDeleteVacancy() {
+        $this->session->guard(['upis', 'admin']);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = "Método no permitido.";
+            header('Location: /SIEP/public/index.php?action=vacancyTrash');
+            exit;
+        }
+        
+        $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+        
+        if (!$vacancy_id) {
+            $_SESSION['error'] = "ID de vacante inválido.";
+            header('Location: /SIEP/public/index.php?action=vacancyTrash');
+            exit;
+        }
+        
+        $vacancyModel = new Vacancy();
+        
+        if ($vacancyModel->hardDelete($vacancy_id)) {
+            $_SESSION['success'] = "💀 Vacante eliminada permanentemente.";
+        } else {
+            $_SESSION['error'] = "❌ Error al eliminar la vacante.";
+        }
+        
+        header('Location: /SIEP/public/index.php?action=vacancyTrash');
+        exit;
+    }
+    
+    /**
+     * Vista de reportes y estadísticas
+     */
+    public function vacancyReports() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $stats = $vacancyModel->getGlobalStatistics();
+        
+        require_once(__DIR__ . '/../Views/upis/vacancy_reports.php');
+    }
+    
+    /**
+     * Exportar PDF de vacantes activas
+     */
+    public function exportActivePDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('approved');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateActivePDF($vacancies);
+    }
+    
+    /**
+     * Exportar PDF de vacantes completadas
+     */
+    public function exportCompletedPDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('completed');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCompletedPDF($vacancies);
+    }
+    
+    /**
+     * Exportar PDF de vacantes canceladas
+     */
+    public function exportCanceledPDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getVacanciesByStatus('rejected');
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCanceledPDF($vacancies);
+    }
+    
+    /**
+     * Exportar Excel de todas las vacantes
+     */
+    public function exportAllExcel() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $vacancies = $vacancyModel->getAllVacanciesForReports();
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateAllVacanciesExcel($vacancies);
+    }
+    
+    /**
+     * Exportar Excel de análisis de empresas
+     */
+    public function exportCompanyAnalysisExcel() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $vacancyModel = new Vacancy();
+        $companies = $vacancyModel->getVacanciesGroupedByCompany();
+        
+        require_once(__DIR__ . '/../Services/ExportService.php');
+        $exportService = new ExportService();
+        $exportService->generateCompanyAnalysisExcel($companies);
+    }
+
 
 }

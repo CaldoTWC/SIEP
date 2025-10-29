@@ -1,6 +1,7 @@
 <?php
-// Archivo: public/index.php (Versión Actualizada con nuevas rutas de vacantes)
-// Actualización: 2025-10-29 - Agregadas rutas para visualización completa de vacantes
+// Archivo: public/index.php
+// Sistema SIEP - UPIICSA
+// Actualización: 2025-10-29 - Sistema de gestión de ciclo de vida de vacantes
 date_default_timezone_set('America/Mexico_City');
 $action = $_GET['action'] ?? 'home';
 
@@ -70,7 +71,6 @@ switch ($action) {
         $studentController->listVacancies();
         break;
     case 'showVacancies':
-        // NUEVA RUTA: Vista completa de vacantes para estudiantes
         require_once(__DIR__ . '/../src/Controllers/StudentController.php');
         $studentController = new StudentController();
         $studentController->showVacancies();
@@ -144,6 +144,11 @@ switch ($action) {
         $companyController = new CompanyController();
         $companyController->deleteVacancy();
         break;
+    case 'completeVacancy':
+        require_once(__DIR__ . '/../src/Controllers/CompanyController.php');
+        $companyController = new CompanyController();
+        $companyController->completeVacancy();
+        break;
     
     // ===================================================================
     // --- RUTAS DE UPIS ---
@@ -153,6 +158,8 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->dashboard();
         break;
+    
+    // --- Gestión de Empresas ---
     case 'reviewCompanies':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
@@ -168,6 +175,8 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->rejectCompany();
         break;
+    
+    // --- Gestión de Vacantes ---
     case 'reviewVacancies':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
@@ -183,6 +192,76 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->rejectVacancy();
         break;
+    
+    // --- Hub de Vacantes (NUEVO) ---
+    case 'upisHub':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->hub();
+        break;
+    
+    // --- Gestionar Vacantes Activas (NUEVO) ---
+    case 'manageActiveVacancies':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->manageActiveVacancies();
+        break;
+    case 'takedownVacancy':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->takedownVacancy();
+        break;
+    
+    // --- Papelera de Vacantes (NUEVO) ---
+    case 'vacancyTrash':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->vacancyTrash();
+        break;
+    case 'restoreVacancy':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->restoreVacancy();
+        break;
+    case 'hardDeleteVacancy':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->hardDeleteVacancy();
+        break;
+    
+    // --- Reportes y Estadísticas (NUEVO) ---
+    case 'vacancyReports':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->vacancyReports();
+        break;
+    case 'exportActivePDF':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->exportActivePDF();
+        break;
+    case 'exportCompletedPDF':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->exportCompletedPDF();
+        break;
+    case 'exportCanceledPDF':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->exportCanceledPDF();
+        break;
+    case 'exportAllExcel':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->exportAllExcel();
+        break;
+    case 'exportCompanyAnalysisExcel':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->exportCompanyAnalysisExcel();
+        break;
+    
+    // --- Gestión de Cartas ---
     case 'reviewLetters':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
@@ -229,36 +308,34 @@ switch ($action) {
         $upisController->downloadHistoryReport();
         break;
     
-    // Gestión de plantillas (UPIS)
+    // --- Gestión de Plantillas ---
     case 'manageTemplates':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
         $upisController->manageTemplates();
         break;
-
     case 'uploadTemplate':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
         $upisController->uploadTemplate();
         break;
-
     case 'resetLetterCounters':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
         $upisController->resetLetterCounters();
         break;
 
+    // --- Gestión de Archivos ---
     case 'downloadDocument':
-    require_once(__DIR__ . '/../src/Controllers/FileController.php');
-    $fileController = new FileController();
-    $fileController->downloadDocument();
-    break;
-
-case 'viewDocument':
-    require_once(__DIR__ . '/../src/Controllers/FileController.php');
-    $fileController = new FileController();
-    $fileController->viewDocument();
-    break;
+        require_once(__DIR__ . '/../src/Controllers/FileController.php');
+        $fileController = new FileController();
+        $fileController->downloadDocument();
+        break;
+    case 'viewDocument':
+        require_once(__DIR__ . '/../src/Controllers/FileController.php');
+        $fileController = new FileController();
+        $fileController->viewDocument();
+        break;
 
     // ===================================================================
     // --- RUTAS GENÉRICAS ---
@@ -277,7 +354,6 @@ case 'viewDocument':
         $profileController = new ProfileController();
         $profileController->showChangePasswordForm();
         break;
-        
     case 'changePassword':
         require_once(__DIR__ . '/../src/Controllers/ProfileController.php');
         $profileController = new ProfileController();

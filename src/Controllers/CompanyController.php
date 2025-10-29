@@ -353,73 +353,117 @@ public function postVacancy() {
         $docService->generateValidationLetter($validation_data, $company_data);
     }
 
+     /**
+     * Cancelar una vacante con justificación obligatoria
+     */
+    public function deleteVacancy() {
+        $this->session->guard(['company']);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = "Método no permitido.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+        $rejection_reason = trim($_POST['rejection_reason'] ?? '');
+        $rejection_notes = trim($_POST['rejection_notes'] ?? '');
+        
+        if (!$vacancy_id || empty($rejection_reason) || empty($rejection_notes)) {
+            $_SESSION['error'] = "❌ Debes proporcionar un motivo y justificación para cancelar.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        // Verificar propiedad
+        $user_id = $_SESSION['user_id'];
+        $userModel = new User();
+        $company_profile = $userModel->getCompanyProfileByUserId($user_id);
+        
+        if (!$company_profile) {
+            $_SESSION['error'] = "No se encontró el perfil de empresa.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        $vacancyModel = new Vacancy();
+        $vacancy = $vacancyModel->getVacancyById($vacancy_id);
+        
+        if (!$vacancy || $vacancy['company_profile_id'] != $company_profile['company_profile_id']) {
+            $_SESSION['error'] = "No tienes permiso para cancelar esta vacante.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        // Cancelar con justificación
+        if ($vacancyModel->cancelByCompany($vacancy_id, $rejection_reason, $rejection_notes)) {
+            $_SESSION['success'] = "✅ Vacante cancelada.";
+        } else {
+            $_SESSION['error'] = "❌ Error al cancelar la vacante.";
+        }
+        
+        header('Location: /SIEP/public/index.php?action=companyDashboard');
+        exit;
+    }
+
     /**
- * Eliminar una vacante (solo si está en status 'pending')
- */
-public function deleteVacancy() {
-    $this->session->guard(['company']);
-    
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['id'])) {
-        $_SESSION['error'] = "Solicitud inválida.";
+     * Completar vacante
+     * Marca la vacante como completada exitosamente
+     */
+    public function completeVacancy() {
+        $this->session->guard(['company']);
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = "Método no permitido.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        $vacancy_id = (int)($_POST['vacancy_id'] ?? 0);
+        $completion_reason = trim($_POST['completion_reason'] ?? '');
+        $completion_notes = trim($_POST['completion_notes'] ?? '');
+        
+        if (!$vacancy_id || empty($completion_reason)) {
+            $_SESSION['error'] = "❌ Debes proporcionar un motivo para completar la vacante.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        // Verificar que sea dueño de la vacante
+        $user_id = $_SESSION['user_id'];
+        $userModel = new User();
+        $company_profile = $userModel->getCompanyProfileByUserId($user_id);
+        
+        if (!$company_profile) {
+            $_SESSION['error'] = "No se encontró el perfil de empresa.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        $vacancyModel = new Vacancy();
+        $vacancy = $vacancyModel->getVacancyById($vacancy_id);
+        
+        if (!$vacancy || $vacancy['company_profile_id'] != $company_profile['company_profile_id']) {
+            $_SESSION['error'] = "No tienes permiso para completar esta vacante.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        if ($vacancy['status'] !== 'approved') {
+            $_SESSION['error'] = "Solo puedes completar vacantes activas.";
+            header('Location: /SIEP/public/index.php?action=companyDashboard');
+            exit;
+        }
+        
+        // Completar la vacante
+        if ($vacancyModel->complete($vacancy_id, $completion_reason, $completion_notes)) {
+            $_SESSION['success'] = "✅ Vacante marcada como completada exitosamente.";
+        } else {
+            $_SESSION['error'] = "❌ Error al completar la vacante.";
+        }
+        
         header('Location: /SIEP/public/index.php?action=companyDashboard');
         exit;
     }
-    
-    // Obtener ID de la vacante
-    $vacancy_id = isset($_POST['vacancy_id']) ? (int)$_POST['vacancy_id'] : (int)$_GET['id'];
-    
-    if (!$vacancy_id) {
-        $_SESSION['error'] = "ID de vacante inválido.";
-        header('Location: /SIEP/public/index.php?action=companyDashboard');
-        exit;
-    }
-    
-    // Obtener información de la empresa actual
-    $user_id = $_SESSION['user_id'];
-    $userModel = new User();
-    $company_profile = $userModel->getCompanyProfileByUserId($user_id);
-    
-    if (!$company_profile) {
-        $_SESSION['error'] = "No se encontró el perfil de empresa.";
-        header('Location: /SIEP/public/index.php?action=companyDashboard');
-        exit;
-    }
-    
-    $company_profile_id = $company_profile['company_profile_id'];
-    
-    // Verificar que la vacante pertenece a esta empresa
-    $vacancyModel = new Vacancy();
-    $vacancy = $vacancyModel->getVacancyById($vacancy_id);
-    
-    if (!$vacancy) {
-        $_SESSION['error'] = "Vacante no encontrada.";
-        header('Location: /SIEP/public/index.php?action=companyDashboard');
-        exit;
-    }
-    
-    // Verificar que la vacante pertenece a esta empresa
-    if ($vacancy['company_profile_id'] != $company_profile_id) {
-        $_SESSION['error'] = "No tienes permiso para eliminar esta vacante.";
-        header('Location: /SIEP/public/index.php?action=companyDashboard');
-        exit;
-    }
-    
-    // Solo permitir eliminar vacantes pendientes o rechazadas
-    if ($vacancy['status'] === 'approved') {
-        $_SESSION['error'] = "No puedes eliminar una vacante que ya ha sido aprobada. Contacta a UPIS si necesitas darla de baja.";
-        header('Location: /SIEP/public/index.php?action=companyDashboard');
-        exit;
-    }
-    
-    // Eliminar la vacante (soft delete - cambia a rejected)
-    if ($vacancyModel->delete($vacancy_id)) {
-        $_SESSION['success'] = "✅ Vacante eliminada correctamente.";
-    } else {
-        $_SESSION['error'] = "❌ Error al eliminar la vacante. Intente nuevamente.";
-    }
-    
-    header('Location: /SIEP/public/index.php?action=companyDashboard');
-    exit;
-}
 
 }

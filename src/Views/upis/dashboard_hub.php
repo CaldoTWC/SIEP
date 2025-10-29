@@ -98,6 +98,16 @@ $session->guard(['upis', 'admin']);
                 </div>
                 <div class="counter" style="font-size: 2rem;">📄</div>
             </a>
+
+                        <!-- Hub de Gestión de Vacantes (NUEVO) -->
+            <a href="/SIEP/public/index.php?action=vacancyHub" class="task-card">
+                <div class="info">
+                    <h3> Gestión de Vacantes</h3>
+                    <p>Ciclo de vida completo: activas, completadas, papelera.</p>
+                </div>
+                <div class="counter">🔄</div>
+            </a>
+
             <!-- Aquí podríamos añadir más tarjetas en el futuro -->
             <div class="dashboard-card">
             <a href="/SIEP/src/Controllers/ReportController.php?action=dashboard">

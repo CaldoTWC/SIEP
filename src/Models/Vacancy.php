@@ -6,9 +6,10 @@
  * - Creación de vacantes por empresas
  * - Aprobación/rechazo por UPIS
  * - Consulta de vacantes aprobadas para estudiantes
+ * - Gestión de ciclo de vida completo (completar, cancelar, restaurar)
  * 
  * @package SIEP\Models
- * @version 3.0.0 - Sistema simplificado de actividades
+ * @version 4.0.0 - Sistema de gestión de ciclo de vida de vacantes
  * @date 2025-10-29
  */
 
@@ -26,7 +27,7 @@ class Vacancy {
     public $activities; // Campo legacy
     public $modality;
     public $num_vacancies;
-    public $status; // pending, approved, rejected
+    public $status; // pending, approved, completed, rejected
     public $posted_at;
     public $approved_at;
     public $approved_by;
@@ -257,68 +258,75 @@ class Vacancy {
     // ========================================================================
     
     /**
- * Aprobar una vacante
- * 
- * @param int $vacancy_id ID de la vacante
- * @param int $reviewer_id ID del usuario UPIS que aprueba
- * @return bool
- */
-public function approve($vacancy_id, $reviewer_id) {
-    $sql = "UPDATE vacancies 
-            SET status = 'approved',
-                approved_at = NOW(),
-                approved_by = :reviewer_id
-            WHERE id = :vacancy_id 
-              AND status = 'pending'";
+     * Aprobar una vacante
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @param int $reviewer_id ID del usuario UPIS que aprueba
+     * @return bool
+     */
+    public function approve($vacancy_id, $reviewer_id) {
+        $sql = "UPDATE vacancies 
+                SET status = 'approved',
+                    approved_at = NOW(),
+                    approved_by = :reviewer_id
+                WHERE id = :vacancy_id 
+                  AND status = 'pending'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
     
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-    $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+    /**
+     * Rechazar una vacante durante revisión inicial
+     * Guarda el origen del rechazo, motivo y justificación
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @param int $reviewer_id ID del usuario UPIS que rechaza
+     * @param string $rejection_reason Motivo predefinido
+     * @param string $rejection_notes Justificación obligatoria
+     * @return bool
+     */
+    public function reject($vacancy_id, $reviewer_id, $rejection_reason, $rejection_notes) {
+        $sql = "UPDATE vacancies 
+                SET status = 'rejected',
+                    rejection_source = 'upis_review',
+                    rejection_reason = :rejection_reason,
+                    rejection_notes = :rejection_notes,
+                    approved_at = NOW(),
+                    approved_by = :reviewer_id
+                WHERE id = :vacancy_id 
+                  AND status = 'pending'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+        $stmt->bindParam(':rejection_reason', $rejection_reason);
+        $stmt->bindParam(':rejection_notes', $rejection_notes);
+        
+        return $stmt->execute();
+    }
     
-    return $stmt->execute();
-}
-    
-   /**
- * Rechazar una vacante
- * El feedback se envía por email, no se guarda en BD
- * 
- * @param int $vacancy_id ID de la vacante
- * @param int $reviewer_id ID del usuario UPIS que rechaza
- * @return bool
- */
-public function reject($vacancy_id, $reviewer_id) {
-    $sql = "UPDATE vacancies 
-            SET status = 'rejected',
-                approved_at = NOW(),
-                approved_by = :reviewer_id
-            WHERE id = :vacancy_id 
-              AND status = 'pending'";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-    $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
-    
-    return $stmt->execute();
-}
-    
-   /**
- * Eliminar una vacante (soft delete - cambiar a rejected)
- * Sin feedback en BD, se notifica por email
- * 
- * @param int $vacancy_id
- * @return bool
- */
-public function delete($vacancy_id) {
-    $sql = "UPDATE vacancies 
-            SET status = 'rejected',
-                approved_at = NOW()
-            WHERE id = :vacancy_id";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
-    
-    return $stmt->execute();
-}
+    /**
+     * Eliminar una vacante (soft delete - cambiar a rejected)
+     * Sin feedback en BD, se notifica por email
+     * 
+     * @param int $vacancy_id
+     * @return bool
+     */
+    public function delete($vacancy_id) {
+        $sql = "UPDATE vacancies 
+                SET status = 'rejected',
+                    approved_at = NOW()
+                WHERE id = :vacancy_id";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
     
     /**
      * Eliminar permanentemente una vacante (hard delete)
@@ -337,7 +345,285 @@ public function delete($vacancy_id) {
     }
     
     // ========================================================================
-    // MÉTODOS AUXILIARES
+    // MÉTODOS DE CICLO DE VIDA (NUEVO)
+    // ========================================================================
+    
+    /**
+     * Completar vacante (solo empresa)
+     * Marca la vacante como completada exitosamente
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @param string $completion_reason Motivo predefinido (Cupos llenos, Estancia concluida, etc.)
+     * @param string $completion_notes Comentarios adicionales opcionales
+     * @return bool
+     */
+    public function complete($vacancy_id, $completion_reason, $completion_notes = '') {
+        $sql = "UPDATE vacancies 
+                SET status = 'completed',
+                    completion_reason = :reason,
+                    completion_notes = :notes,
+                    completed_at = NOW()
+                WHERE id = :vacancy_id 
+                  AND status = 'approved'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        $stmt->bindParam(':reason', $completion_reason);
+        $stmt->bindParam(':notes', $completion_notes);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Cancelar vacante por empresa (con justificación obligatoria)
+     * La empresa puede cancelar vacantes pending o approved
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @param string $rejection_reason Motivo predefinido
+     * @param string $rejection_notes Justificación obligatoria
+     * @return bool
+     */
+    public function cancelByCompany($vacancy_id, $rejection_reason, $rejection_notes) {
+        $sql = "UPDATE vacancies 
+                SET status = 'rejected',
+                    rejection_source = 'company_cancel',
+                    rejection_reason = :reason,
+                    rejection_notes = :notes,
+                    approved_at = NOW()
+                WHERE id = :vacancy_id 
+                  AND status IN ('pending', 'approved')";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        $stmt->bindParam(':reason', $rejection_reason);
+        $stmt->bindParam(':notes', $rejection_notes);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Tumbar vacante activa (solo UPIS)
+     * UPIS puede desactivar una vacante ya aprobada
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @param int $reviewer_id ID del usuario UPIS
+     * @param string $rejection_notes Justificación obligatoria
+     * @return bool
+     */
+    public function takedown($vacancy_id, $reviewer_id, $rejection_notes) {
+        $sql = "UPDATE vacancies 
+                SET status = 'rejected',
+                    rejection_source = 'upis_takedown',
+                    rejection_notes = :notes,
+                    approved_at = NOW(),
+                    approved_by = :reviewer_id
+                WHERE id = :vacancy_id 
+                  AND status = 'approved'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        $stmt->bindParam(':reviewer_id', $reviewer_id, PDO::PARAM_INT);
+        $stmt->bindParam(':notes', $rejection_notes);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Restaurar vacante rechazada (volver a pending)
+     * Permite re-revisar una vacante que fue rechazada
+     * 
+     * @param int $vacancy_id ID de la vacante
+     * @return bool
+     */
+    public function restore($vacancy_id) {
+        $sql = "UPDATE vacancies 
+                SET status = 'pending',
+                    rejection_source = NULL,
+                    rejection_reason = NULL,
+                    rejection_notes = NULL,
+                    approved_at = NULL,
+                    approved_by = NULL
+                WHERE id = :vacancy_id 
+                  AND status = 'rejected'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':vacancy_id', $vacancy_id, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+    
+    // ========================================================================
+    // MÉTODOS DE ESTADÍSTICAS Y REPORTES
+    // ========================================================================
+    
+    /**
+     * Obtener estadísticas de la papelera
+     * Cuenta vacantes rechazadas por origen
+     * 
+     * @return array
+     */
+    public function getTrashStatistics() {
+        $sql = "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN rejection_source = 'upis_review' THEN 1 ELSE 0 END) as upis_review,
+                    SUM(CASE WHEN rejection_source = 'company_cancel' THEN 1 ELSE 0 END) as company_cancel,
+                    SUM(CASE WHEN rejection_source = 'upis_takedown' THEN 1 ELSE 0 END) as upis_takedown
+                FROM vacancies
+                WHERE status = 'rejected'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener estadísticas globales del sistema
+     * Incluye el nuevo estado 'completed'
+     * 
+     * @return array
+     */
+    public function getGlobalStatistics() {
+        $sql = "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                    SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+                FROM vacancies";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener vacantes por estado
+     * Con datos de empresa y revisor
+     * 
+     * @param string $status Estado de la vacante
+     * @return array
+     */
+    public function getVacanciesByStatus($status) {
+        $sql = "SELECT 
+                    v.*,
+                    cp.company_name,
+                    cp.rfc,
+                    u.email as company_email,
+                    reviewer.name as reviewer_name
+                FROM vacancies v
+                JOIN company_profiles cp ON v.company_profile_id = cp.id
+                JOIN users u ON cp.contact_person_user_id = u.id
+                LEFT JOIN users reviewer ON v.approved_by = reviewer.id
+                WHERE v.status = :status
+                ORDER BY v.posted_at DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':status', $status);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener todas las vacantes para reportes
+     * Sin filtros, con datos de empresa
+     * 
+     * @return array
+     */
+    public function getAllVacanciesForReports() {
+        $sql = "SELECT 
+                    v.*,
+                    cp.company_name,
+                    cp.rfc,
+                    u.email as company_email
+                FROM vacancies v
+                JOIN company_profiles cp ON v.company_profile_id = cp.id
+                JOIN users u ON cp.contact_person_user_id = u.id
+                ORDER BY v.posted_at DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener vacantes agrupadas por empresa
+     * Con estadísticas calculadas por empresa
+     * 
+     * @return array
+     */
+    public function getVacanciesGroupedByCompany() {
+        // Primero obtener todas las empresas con vacantes
+        $sql = "SELECT DISTINCT 
+                    cp.id as company_profile_id,
+                    cp.company_name,
+                    cp.rfc,
+                    u.email as company_email
+                FROM vacancies v
+                JOIN company_profiles cp ON v.company_profile_id = cp.id
+                JOIN users u ON cp.contact_person_user_id = u.id
+                ORDER BY cp.company_name ASC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Para cada empresa, obtener sus vacantes y estadísticas
+        foreach ($companies as &$company) {
+            // Obtener vacantes de la empresa
+            $sql_vacancies = "SELECT * FROM vacancies 
+                              WHERE company_profile_id = :company_id 
+                              ORDER BY posted_at DESC";
+            $stmt_v = $this->conn->prepare($sql_vacancies);
+            $stmt_v->bindParam(':company_id', $company['company_profile_id']);
+            $stmt_v->execute();
+            $company['vacancies'] = $stmt_v->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Calcular estadísticas
+            $total = count($company['vacancies']);
+            $completed = 0;
+            $cancelled = 0;
+            $active = 0;
+            $pending = 0;
+            
+            foreach ($company['vacancies'] as $vacancy) {
+                switch ($vacancy['status']) {
+                    case 'completed':
+                        $completed++;
+                        break;
+                    case 'rejected':
+                        $cancelled++;
+                        break;
+                    case 'approved':
+                        $active++;
+                        break;
+                    case 'pending':
+                        $pending++;
+                        break;
+                }
+            }
+            
+            $finalized = $completed + $cancelled;
+            $success_rate = $finalized > 0 ? round(($completed / $finalized) * 100, 1) : 0;
+            
+            $company['stats'] = [
+                'total' => $total,
+                'pending' => $pending,
+                'active' => $active,
+                'completed' => $completed,
+                'cancelled' => $cancelled,
+                'success_rate' => $success_rate
+            ];
+        }
+        
+        return $companies;
+    }
+    
+    // ========================================================================
+    // MÉTODOS AUXILIARES EXISTENTES
     // ========================================================================
     
     /**
