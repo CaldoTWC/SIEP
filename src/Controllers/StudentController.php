@@ -35,6 +35,16 @@ class StudentController {
         require_once(__DIR__ . '/../Views/student/vacancies.php');
     }
 
+    /**
+ * Muestra las vacantes disponibles (alias de listVacancies)
+ */
+public function showVacancies() {
+    $this->session->guard(['student']);
+    $vacancyModel = new Vacancy();
+    $approvedVacancies = $vacancyModel->getApprovedVacancies();
+    require_once(__DIR__ . '/../Views/student/vacancies.php');
+}
+
     // ====================================================================
     // --- MÉTODO QUE ESTABA FALTANDO ---
     // ====================================================================
