@@ -732,15 +732,17 @@ public function rejectAccreditation() {
 }
 
     public function showHistory() {
-        $this->session->guard(['upis', 'admin']);
-        
-        require_once(__DIR__ . '/../Models/CompletedProcess.php');
-        $completedModel = new CompletedProcess();
-        $completedProcesses = $completedModel->getAll();
-        
-        require_once(__DIR__ . '/../Views/upis/history_report.php');
-    }
-
+    $this->session->guard(['upis', 'admin']);
+    
+    // Temporalmente comentado hasta crear el modelo CompletedProcess
+    // require_once(__DIR__ . '/../Models/CompletedProcess.php');
+    // $completedModel = new CompletedProcess();
+    // $completedProcesses = $completedModel->getAll();
+    
+    $completedProcesses = []; // Array vacío temporal
+    
+    require_once(__DIR__ . '/../Views/upis/history_report.php');
+}
     public function downloadHistoryReport() {
         $this->session->guard(['upis', 'admin']);
         

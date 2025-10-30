@@ -341,6 +341,28 @@ switch ($action) {
         $vacancyController->showDetails();
         break;
 
+            // --- Reportes de Estudiantes ---
+    case 'exportStudentProcessingPDF':
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportStudentProcessingPDF();
+        break;
+    case 'exportStudentProcessingExcel':
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportStudentProcessingExcel();
+        break;
+    case 'exportCompanyStudentsPDF':
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportCompanyStudentsPDF();
+        break;
+    case 'exportCompanyStudentsExcel':
+        require_once(__DIR__ . '/../src/Controllers/ReportController.php');
+        $reportController = new ReportController();
+        $reportController->exportCompanyStudentsExcel();
+        break;
+
     // ===================================================================
     // --- RUTAS DE PERFIL (TODOS LOS USUARIOS) ---
     // ===================================================================

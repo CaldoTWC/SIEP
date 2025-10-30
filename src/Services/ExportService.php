@@ -4,7 +4,7 @@
  * Genera PDFs y archivos Excel de vacantes
  * 
  * @package SIEP\Services
- * @version 1.0.0
+ * @version 2.0.0 - Integración con TCPDF
  */
 
 require_once(__DIR__ . '/../Config/Database.php');
@@ -15,156 +15,136 @@ class ExportService {
      * Generar PDF de vacantes activas
      */
     public function generateActivePDF($vacancies) {
-        $this->generatePDF($vacancies, 'Vacantes Activas', 'active');
+        $this->generatePDFWithTCPDF($vacancies, 'Vacantes Activas', 'active');
     }
     
     /**
      * Generar PDF de vacantes completadas
      */
     public function generateCompletedPDF($vacancies) {
-        $this->generatePDF($vacancies, 'Vacantes Completadas', 'completed');
+        $this->generatePDFWithTCPDF($vacancies, 'Vacantes Completadas', 'completed');
     }
     
     /**
      * Generar PDF de vacantes canceladas
      */
     public function generateCanceledPDF($vacancies) {
-        $this->generatePDF($vacancies, 'Vacantes Canceladas', 'canceled');
+        $this->generatePDFWithTCPDF($vacancies, 'Vacantes Canceladas', 'canceled');
     }
     
     /**
-     * Método genérico para generar PDFs
+     * Generar PDF usando TCPDF
      */
-    private function generatePDF($vacancies, $title, $type) {
-        // Configurar headers para PDF
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="' . str_replace(' ', '_', $title) . '_' . date('Y-m-d') . '.pdf"');
-        
-        // Generar HTML del reporte
-        $html = $this->generateReportHTML($vacancies, $title, $type);
-        
-        // Usar DomPDF o similar (si tienes instalada la librería)
-        // Por ahora, generamos un HTML simple que se puede imprimir como PDF
-        echo $html;
-        exit;
-    }
-    
-    /**
-     * Generar HTML para el reporte
-     */
-    private function generateReportHTML($vacancies, $title, $type) {
-        $fecha = date('d/m/Y H:i');
-        $total = count($vacancies);
-        
-        $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{$title}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #005a9c; margin: 0; }
-        .header p { color: #666; margin: 5px 0; }
-        .info-box { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #005a9c; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>UPIICSA - IPN</h1>
-        <h2>{$title}</h2>
-        <p>Sistema Integral de Estancias Profesionales (SIEP)</p>
-    </div>
-    
-    <div class="info-box">
-        <strong>Fecha de generación:</strong> {$fecha}<br>
-        <strong>Total de registros:</strong> {$total}
-    </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Empresa</th>
-                <th>RFC</th>
-                <th>Vacante</th>
-                <th>Plazas</th>
-                <th>Apoyo</th>
-                <th>Modalidad</th>
-                <th>Carrera</th>
-HTML;
-
-        if ($type === 'active') {
-            $html .= '<th>Fecha Aprobación</th>';
-        } elseif ($type === 'completed') {
-            $html .= '<th>Fecha Completada</th><th>Motivo</th>';
-        } elseif ($type === 'canceled') {
-            $html .= '<th>Origen</th><th>Motivo</th><th>Fecha</th>';
+    private function generatePDFWithTCPDF($vacancies, $title, $type) {
+        // Verificar si TCPDF está disponible
+        if (!file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+            die("Error: Librería TCPDF no instalada. Ejecuta: composer require tecnickcom/tcpdf");
         }
-
-        $html .= <<<HTML
-            </tr>
-        </thead>
-        <tbody>
-HTML;
-
-        // Generar filas
+        
+        require_once(__DIR__ . '/../../vendor/autoload.php');
+        
+        // Crear PDF en orientación horizontal
+        $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8');
+        
+        // Configuración del documento
+        $pdf->SetCreator('SIEP - IPN UPIICSA');
+        $pdf->SetAuthor('Unidad Politécnica de Integración Social');
+        $pdf->SetTitle($title);
+        $pdf->SetSubject('Reporte de Vacantes');
+        
+        // Remover header/footer por defecto
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        
+        // Márgenes
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->SetAutoPageBreak(true, 10);
+        
+        // Agregar página
+        $pdf->AddPage();
+        
+        // Título principal
+        $pdf->SetFont('helvetica', 'B', 18);
+        $pdf->Cell(0, 10, 'UPIICSA - IPN', 0, 1, 'C');
+        
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->Cell(0, 8, $title, 0, 1, 'C');
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->Cell(0, 6, 'Sistema Integral de Estancias Profesionales (SIEP)', 0, 1, 'C');
+        $pdf->Ln(5);
+        
+        // Info box
+        $pdf->SetFillColor(240, 240, 240);
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->Cell(0, 6, 'Fecha de generación: ' . date('d/m/Y H:i') . '     Total de registros: ' . count($vacancies), 0, 1, 'L', true);
+        $pdf->Ln(5);
+        
+        // Encabezados de tabla
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetFillColor(0, 90, 156);
+        $pdf->SetTextColor(255, 255, 255);
+        
+        $pdf->Cell(12, 7, 'ID', 1, 0, 'C', true);
+        $pdf->Cell(45, 7, 'Empresa', 1, 0, 'C', true);
+        $pdf->Cell(55, 7, 'Vacante', 1, 0, 'C', true);
+        $pdf->Cell(15, 7, 'Plazas', 1, 0, 'C', true);
+        $pdf->Cell(25, 7, 'Apoyo', 1, 0, 'C', true);
+        $pdf->Cell(25, 7, 'Modalidad', 1, 0, 'C', true);
+        
+        if ($type === 'active') {
+            $pdf->Cell(30, 7, 'Aprobación', 1, 1, 'C', true);
+        } elseif ($type === 'completed') {
+            $pdf->Cell(30, 7, 'Completada', 1, 0, 'C', true);
+            $pdf->Cell(45, 7, 'Motivo', 1, 1, 'C', true);
+        } elseif ($type === 'canceled') {
+            $pdf->Cell(25, 7, 'Origen', 1, 0, 'C', true);
+            $pdf->Cell(45, 7, 'Motivo', 1, 1, 'C', true);
+        }
+        
+        // Datos de la tabla
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetFillColor(249, 249, 249);
+        
+        $fill = false;
         foreach ($vacancies as $v) {
-            $html .= '<tr>';
-            $html .= '<td>' . htmlspecialchars($v['id']) . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['company_name']) . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['rfc'] ?? 'N/A') . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['title']) . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['num_vacancies']) . '</td>';
-            $html .= '<td>$' . number_format($v['economic_support'], 2) . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['modality']) . '</td>';
-            $html .= '<td>' . htmlspecialchars($v['related_career'] ?? 'N/A') . '</td>';
+            $pdf->Cell(12, 6, $v['id'], 1, 0, 'C', $fill);
+            $pdf->Cell(45, 6, substr($v['company_name'], 0, 30), 1, 0, 'L', $fill);
+            $pdf->Cell(55, 6, substr($v['title'], 0, 40), 1, 0, 'L', $fill);
+            $pdf->Cell(15, 6, $v['num_vacancies'], 1, 0, 'C', $fill);
+            $pdf->Cell(25, 6, '$' . number_format($v['economic_support'], 2), 1, 0, 'R', $fill);
+            $pdf->Cell(25, 6, $v['modality'], 1, 0, 'C', $fill);
             
             if ($type === 'active') {
-                $html .= '<td>' . date('d/m/Y', strtotime($v['approved_at'])) . '</td>';
+                $pdf->Cell(30, 6, date('d/m/Y', strtotime($v['approved_at'])), 1, 1, 'C', $fill);
             } elseif ($type === 'completed') {
-                $html .= '<td>' . date('d/m/Y', strtotime($v['completed_at'])) . '</td>';
-                $html .= '<td>' . htmlspecialchars($v['completion_reason'] ?? 'N/A') . '</td>';
+                $pdf->Cell(30, 6, date('d/m/Y', strtotime($v['completed_at'])), 1, 0, 'C', $fill);
+                $pdf->Cell(45, 6, substr($v['completion_reason'] ?? 'N/A', 0, 30), 1, 1, 'L', $fill);
             } elseif ($type === 'canceled') {
                 $source = $v['rejection_source'] ?? 'N/A';
-                $sourceLabel = [
-                    'upis_review' => 'UPIS-Revisión',
+                $sourceLabels = [
+                    'upis_review' => 'UPIS-Rev',
                     'company_cancel' => 'Empresa',
-                    'upis_takedown' => 'UPIS-Tumbada'
+                    'upis_takedown' => 'UPIS-Tumb'
                 ];
-                $html .= '<td>' . ($sourceLabel[$source] ?? 'N/A') . '</td>';
-                $html .= '<td>' . htmlspecialchars($v['rejection_reason'] ?? 'N/A') . '</td>';
-                $html .= '<td>' . date('d/m/Y', strtotime($v['approved_at'])) . '</td>';
+                $pdf->Cell(25, 6, $sourceLabels[$source] ?? 'N/A', 1, 0, 'C', $fill);
+                $pdf->Cell(45, 6, substr($v['rejection_reason'] ?? 'N/A', 0, 30), 1, 1, 'L', $fill);
             }
             
-            $html .= '</tr>';
+            $fill = !$fill;
         }
-
-        $html .= <<<HTML
-        </tbody>
-    </table>
-    
-    <div class="footer">
-        <p>Documento generado automáticamente por SIEP - UPIICSA IPN</p>
-        <p>Este reporte es válido solo para fines informativos internos</p>
-    </div>
-    
-    <script>
-        window.onload = function() {
-            window.print();
-        }
-    </script>
-</body>
-</html>
-HTML;
-
-        return $html;
+        
+        // Footer
+        $pdf->Ln(5);
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->SetTextColor(100, 100, 100);
+        $pdf->Cell(0, 5, 'Documento generado automáticamente por SIEP - UPIICSA IPN', 0, 1, 'C');
+        
+        // Output
+        $filename = str_replace(' ', '_', $title) . '_' . date('Y-m-d') . '.pdf';
+        $pdf->Output($filename, 'D');
+        exit;
     }
     
     /**

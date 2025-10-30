@@ -74,8 +74,7 @@ $session->guard(['upis', 'admin']);
                 <div class="counter"><?php echo $pendingVacanciesCount; ?></div>
             </a>
 
-           <!-- CORRECTO: -->
-<a href="/SIEP/public/index.php?action=reportDashboard" class="task-card">
+            <a href="/SIEP/public/index.php?action=reviewLetters" class="task-card">
                 <div class="info">
                     <h3>Cartas de Presentación</h3>
                     <p>Gestionar solicitudes de estudiantes.</p>
@@ -103,20 +102,19 @@ $session->guard(['upis', 'admin']);
                         <!-- Hub de Gestión de Vacantes (NUEVO) -->
             <a href="/SIEP/public/index.php?action=vacancyHub" class="task-card">
                 <div class="info">
-                    <h3> Gestión de Vacantes</h3>
+                    <h3>📊 Gestión de Vacantes</h3>
                     <p>Ciclo de vida completo: activas, completadas, papelera.</p>
                 </div>
                 <div class="counter">🔄</div>
             </a>
-
-            <!-- Aquí podríamos añadir más tarjetas en el futuro -->
-            <div class="dashboard-card">
-            <a href="/SIEP/src/Controllers/ReportController.php?action=dashboard">
-                <div class="card-icon">📊</div>
-                    <h3>Dashboard de Reportes</h3>
-                    <p>Estadísticas, estancias, vacantes y empresas</p>
-                    </a>
-        </div>
+                        <!-- Centro de Reportes y Estadísticas -->
+            <a href="/SIEP/public/index.php?action=showHistory" class="task-card">
+                <div class="info">
+                    <h3>📊 Centro de Reportes</h3>
+                    <p>Reportes, estadísticas y análisis del sistema.</p>
+                </div>
+                <div class="counter">📈</div>
+            </a>
 
         
 
