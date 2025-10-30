@@ -104,34 +104,28 @@ class FileController {
     }
     
     /**
-     * Ver documento en el navegador (sin descargar)
-     * 
-     * URL: /SIEP/public/index.php?action=viewDocument&id=123
-     */
-    public function viewDocument() {
-        // Verificar autenticación
-        if (!isset($_SESSION['user_id'])) {
-            http_response_code(401);
-            die('No autorizado. Debe iniciar sesión.');
-        }
+ * Ver documento en el navegador
+ * Soporta tanto ID de documento como ruta directa
+ */
+public function viewDocument() {
+    // Verificar autenticación
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        die('No autorizado. Debe iniciar sesión.');
+    }
+    
+    // OPCIÓN 1: Ver documento por ID (desde base de datos)
+    if (isset($_GET['id'])) {
+        $document_id = (int)$_GET['id'];
         
-        $document_id = $_GET['id'] ?? null;
-        
-        if (!$document_id) {
-            http_response_code(400);
-            die('ID de documento no proporcionado.');
-        }
-        
-        // Obtener información del documento
         $docModel = new StudentDocument();
-        $document = $docModel->findById((int)$document_id);
+        $document = $docModel->findById($document_id);
         
         if (!$document) {
             http_response_code(404);
             die('Documento no encontrado.');
         }
         
-        // Verificar permisos
         $can_access = FileHelper::userCanAccessFile(
             $_SESSION['user_id'],
             $_SESSION['user_role'],
@@ -144,7 +138,6 @@ class FileController {
             die('No tiene permisos para acceder a este archivo.');
         }
         
-        // Obtener ruta absoluta
         $file_path = FileHelper::getAbsolutePath($document['file_path']);
         
         if (!file_exists($file_path)) {
@@ -152,9 +145,69 @@ class FileController {
             die('El archivo no existe en el servidor.');
         }
         
-        // Servir para visualización en navegador
         $this->displayFile($file_path);
     }
+    
+    // OPCIÓN 2: Ver documento por ruta directa (para acreditaciones)
+    elseif (isset($_GET['path'])) {
+        
+        // Solo UPIS/Admin pueden ver archivos por ruta directa
+        if (!in_array($_SESSION['user_role'], ['upis', 'admin'])) {
+            http_response_code(403);
+            die('No tiene permisos para acceder a este archivo.');
+        }
+        
+        $file_path = $_GET['path'];
+        
+        // ✅ NORMALIZAR BARRAS (Windows vs Linux)
+        $file_path = str_replace('\\', '/', $file_path);
+        
+        // Construir ruta absoluta
+        $base_path = __DIR__ . '/../../';
+        
+        // ✅ Intentar con realpath primero
+        $absolute_path = realpath($base_path . $file_path);
+        
+        // ✅ Si realpath falla, construir manualmente
+        if (!$absolute_path) {
+            $absolute_path = $base_path . $file_path;
+            $absolute_path = str_replace('\\', '/', $absolute_path);
+        }
+        
+        // Validar que el archivo existe
+        if (!file_exists($absolute_path)) {
+            // DEBUG: Mostrar rutas para ver qué está pasando
+            http_response_code(404);
+            echo '<h3>Archivo no encontrado</h3>';
+            echo '<p><strong>Ruta recibida:</strong> ' . htmlspecialchars($_GET['path']) . '</p>';
+            echo '<p><strong>Ruta normalizada:</strong> ' . htmlspecialchars($file_path) . '</p>';
+            echo '<p><strong>Ruta absoluta construida:</strong> ' . htmlspecialchars($absolute_path) . '</p>';
+            echo '<p><strong>Base path:</strong> ' . htmlspecialchars($base_path) . '</p>';
+            echo '<p><strong>¿Existe?:</strong> ' . (file_exists($absolute_path) ? 'SÍ' : 'NO') . '</p>';
+            
+            // Listar archivos en el directorio
+            $dir = dirname($absolute_path);
+            if (is_dir($dir)) {
+                echo '<p><strong>Archivos en el directorio:</strong></p><ul>';
+                foreach (scandir($dir) as $file) {
+                    if ($file !== '.' && $file !== '..') {
+                        echo '<li>' . htmlspecialchars($file) . '</li>';
+                    }
+                }
+                echo '</ul>';
+            }
+            die();
+        }
+        
+        // Servir archivo
+        $this->displayFile($absolute_path);
+    }
+    
+    else {
+        http_response_code(400);
+        die('Debe proporcionar un ID de documento o una ruta de archivo.');
+    }
+}
     
     /**
      * Mostrar archivo en navegador (inline)

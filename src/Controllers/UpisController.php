@@ -570,6 +570,11 @@ public function downloadAllApprovedLetters() {
 /**
  * Vista de revisión de acreditaciones pendientes
  */
+
+
+/**
+ * Vista de revisión de acreditaciones pendientes
+ */
 public function reviewAccreditations() {
     $this->session->guard(['upis', 'admin']);
     
@@ -581,34 +586,8 @@ public function reviewAccreditations() {
 }
 
 /**
- * Vista detallada de una acreditación
- */
-public function reviewAccreditation() {
-    $this->session->guard(['upis', 'admin']);
-    
-    $submission_id = (int)($_GET['id'] ?? 0);
-    
-    if (!$submission_id) {
-        $_SESSION['error'] = "ID de solicitud inválido.";
-        header('Location: /SIEP/public/index.php?action=upisDashboard');
-        exit;
-    }
-    
-    require_once(__DIR__ . '/../Models/Accreditation.php');
-    $accreditationModel = new Accreditation();
-    $submission = $accreditationModel->getById($submission_id);
-    
-    if (!$submission) {
-        $_SESSION['error'] = "Solicitud no encontrada.";
-        header('Location: /SIEP/public/index.php?action=upisDashboard');
-        exit;
-    }
-    
-    require_once(__DIR__ . '/../Views/upis/review_accreditation.php');
-}
-
-/**
  * Aprobar solicitud de acreditación
+ * ACTUALIZADO: Ahora registra revisor, fecha y comentarios
  */
 public function approveAccreditation() {
     $this->session->guard(['upis', 'admin']);
@@ -638,8 +617,10 @@ public function approveAccreditation() {
         exit;
     }
     
-    // Actualizar estado
-    if ($accreditationModel->updateStatus($submission_id, 'approved')) {
+    // ✅ USAR EL NUEVO MÉTODO approve() con revisor, fecha y comentarios
+    $reviewer_id = $_SESSION['user_id'];
+    
+    if ($accreditationModel->approve($submission_id, $reviewer_id, $comments)) {
         
         // Enviar notificación al estudiante
         require_once(__DIR__ . '/../Services/EmailService.php');
@@ -657,9 +638,9 @@ public function approveAccreditation() {
         
         $emailService->notifyStudentAccreditationStatus($student_data, 'approved', $comments);
         
-        $_SESSION['success'] = "Solicitud aprobada y estudiante notificado.";
+        $_SESSION['success'] = "✅ Solicitud aprobada y estudiante notificado.";
     } else {
-        $_SESSION['error'] = "Error al aprobar la solicitud.";
+        $_SESSION['error'] = "❌ Error al aprobar la solicitud.";
     }
     
     header('Location: /SIEP/public/index.php?action=reviewAccreditations');
@@ -668,6 +649,7 @@ public function approveAccreditation() {
 
 /**
  * Rechazar solicitud de acreditación
+ * ACTUALIZADO: Ahora registra revisor, fecha y comentarios obligatorios
  */
 public function rejectAccreditation() {
     $this->session->guard(['upis', 'admin']);
@@ -688,7 +670,7 @@ public function rejectAccreditation() {
     }
     
     if (empty($comments)) {
-        $_SESSION['error'] = "Debes proporcionar una razón para el rechazo.";
+        $_SESSION['error'] = "⚠️ Debes proporcionar una razón para el rechazo.";
         header('Location: /SIEP/public/index.php?action=reviewAccreditation&id=' . $submission_id);
         exit;
     }
@@ -703,8 +685,10 @@ public function rejectAccreditation() {
         exit;
     }
     
-    // Actualizar estado
-    if ($accreditationModel->updateStatus($submission_id, 'rejected')) {
+    // ✅ USAR EL NUEVO MÉTODO reject() con revisor, fecha y comentarios
+    $reviewer_id = $_SESSION['user_id'];
+    
+    if ($accreditationModel->reject($submission_id, $reviewer_id, $comments)) {
         
         // Enviar notificación al estudiante con comentarios
         require_once(__DIR__ . '/../Services/EmailService.php');
@@ -722,7 +706,7 @@ public function rejectAccreditation() {
         
         $emailService->notifyStudentAccreditationStatus($student_data, 'rejected', $comments);
         
-        $_SESSION['success'] = "Solicitud rechazada y estudiante notificado.";
+        $_SESSION['success'] = "❌ Solicitud rechazada y estudiante notificado.";
     } else {
         $_SESSION['error'] = "Error al rechazar la solicitud.";
     }

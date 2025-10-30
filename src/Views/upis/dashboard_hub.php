@@ -116,6 +116,15 @@ $session->guard(['upis', 'admin']);
                 <div class="counter">📈</div>
             </a>
 
+            <!-- Revisar Acreditaciones -->
+<a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
+    <div class="info">
+        <h3>✅ Acreditaciones</h3>
+        <p>Revisar solicitudes de acreditación de estudiantes.</p>
+    </div>
+    <div class="counter">📋</div>
+</a>
+
         
 
         <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn btn-outline-secondary">🔐 Cambiar Contraseña </a>

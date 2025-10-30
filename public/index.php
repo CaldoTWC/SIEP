@@ -384,6 +384,24 @@ switch ($action) {
         $reportController->dashboard();
         break;
 
+            // --- Gestión de Acreditaciones ---
+        // --- Gestión de Acreditaciones ---
+    case 'reviewAccreditations':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->reviewAccreditations();
+        break;
+    case 'approveAccreditation':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->approveAccreditation();
+        break;
+    case 'rejectAccreditation':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->rejectAccreditation();
+        break;
+
     // --- RUTA POR DEFECTO ---
     default:
         header("HTTP/1.0 404 Not Found");
