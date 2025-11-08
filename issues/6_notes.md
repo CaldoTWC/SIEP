@@ -1,0 +1,1 @@
+---\n**Notas de implementación:**\n- Modificar estructura de BD si es necesario (agregar campo estado a cartas)\n- Lógica para actualizar el estado al hacer ZIP masivo\n- Nueva sección de administración para ver y gestionar cartas descargadas/completadas\n- Permitir re-descarga de los archivos PDF asociados si es necesario\n\n**Estimación:** 6-8 horas de desarrollo
