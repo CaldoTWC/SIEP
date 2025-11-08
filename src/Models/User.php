@@ -386,6 +386,37 @@ public function getPendingCompanies() {
     
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+    /**
+     * Obtiene todas las empresas con status 'active'
+     * 
+     * @return array Lista de empresas activas con información básica
+     */
+    public function getActiveCompanies() {
+        $sql = "SELECT 
+                    u.id, 
+                    u.id as user_id,
+                    u.email, 
+                    u.first_name, 
+                    u.last_name_p, 
+                    u.last_name_m,
+                    u.phone_number, 
+                    u.created_at,
+                    cp.company_name, 
+                    cp.commercial_name, 
+                    cp.rfc,
+                    cp.contact_person_position
+                FROM users u
+                JOIN company_profiles cp ON u.id = cp.contact_person_user_id
+                WHERE u.role = 'company' 
+                  AND u.status = 'active'
+                ORDER BY u.created_at DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     
     /**
      * Aprueba una empresa (cambia status a 'active')
@@ -668,6 +699,26 @@ public function getPendingCompanies() {
         return $result ? (int)$result['id'] : false;
     }
 
+    /**
+     * Buscar un usuario por su ID
+     * 
+     * @param int $user_id ID del usuario
+     * @return array|false Datos del usuario o false si no se encuentra
+     */
+    public function findById($user_id) {
+        $sql = "SELECT 
+                    id, email, first_name, last_name_p, last_name_m,
+                    phone_number, role, status, created_at
+                FROM users 
+                WHERE id = :user_id
+                LIMIT 1";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     // ========================================================================
     // MÉTODOS PARA BLACKLIST (Implementación futura - PINEADOS)

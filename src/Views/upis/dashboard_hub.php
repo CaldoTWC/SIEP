@@ -58,10 +58,11 @@ $session->guard(['upis', 'admin']);
         <p>Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>. Selecciona una tarea para comenzar.</p>
 
         <div class="task-grid">
-            <a href="/SIEP/public/index.php?action=reviewCompanies" class="task-card">
+            <!-- 🆕 Hub de Gestión de Empresas -->
+            <a href="/SIEP/public/index.php?action=companyManagementHub" class="task-card">
                 <div class="info">
-                    <h3>Empresas</h3>
-                    <p>Revisar nuevas solicitudes de registro.</p>
+                    <h3>🏢 Gestión de Empresas</h3>
+                    <p>Hub integrado: pendientes, activas, historial de rechazos.</p>
                 </div>
                 <div class="counter"><?php echo $pendingCompaniesCount; ?></div>
             </a>

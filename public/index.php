@@ -160,6 +160,11 @@ switch ($action) {
         break;
     
     // --- Gestión de Empresas ---
+    case 'companyManagementHub':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->companyManagementHub();
+        break;
     case 'reviewCompanies':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
