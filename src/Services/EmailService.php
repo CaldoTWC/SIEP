@@ -57,8 +57,8 @@ class EmailService {
             
             $mail->Subject = "❌ Registro de Empresa Rechazado - SIEP UPIICSA";
             
-            $mail->Body = $this->templates->companyRejectionNotification($company_data, $rejection_reason);
-            $mail->AltBody = $this->templates->companyRejectionNotificationPlainText($company_data, $rejection_reason);
+            $mail->Body = $this->templates->companyStatusNotification($company_data, 'rejected', $rejection_reason);
+            $mail->AltBody = $this->templates->companyStatusNotificationPlainText($company_data, 'rejected', $rejection_reason);
             
             $success = $mail->send();
             

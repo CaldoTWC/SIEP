@@ -196,8 +196,7 @@ public function approveCompany() {
 }
 
 /**
- * Rechaza una empresa (cambia status de 'pending' a 'inactive')
- * ACTUALIZADO: Guarda en historial de rechazos ANTES de cambiar status
+ * Rechaza una empresa (cambia status de 'pending' a 'rejected')
  */
 public function rejectCompany() {
     $this->session->guard(['upis', 'admin']);
@@ -221,80 +220,72 @@ public function rejectCompany() {
         $userModel = new User();
         
         // ========================================
-        // 🆕 GUARDAR EN HISTORIAL ANTES DE RECHAZAR
+        // PASO 1: Obtener datos de la empresa ANTES de eliminar
         // ========================================
-        
-        // Obtener datos de la empresa ANTES de cambiar status
         $company = $userModel->findById($company_id);
         $company_profile = $userModel->getCompanyProfileByUserId($company_id);
         
         if (!$company || !$company_profile) {
-            $_SESSION['error'] = "No se encontraron los datos de la empresa.";
+            $_SESSION['error'] = "No se encontró la información de la empresa.";
             header('Location: /SIEP/public/index.php?action=reviewCompanies');
             exit;
         }
         
-        // Guardar en historial de rechazos
-        require_once(__DIR__ . '/../Models/CompanyRejection.php');
-        $rejectionModel = new CompanyRejection();
-        
-        $rejection_data = [
-            'company_name' => $company_profile['company_name'] ?? 'N/A',
-            'contact_email' => $company['email'],
+        $company_data = [
             'contact_name' => $company['first_name'] . ' ' . 
                              $company['last_name_p'] . ' ' . 
                              $company['last_name_m'],
-            'rejection_reason' => $comments,
-            'rfc' => $company_profile['rfc'] ?? null,
-            'commercial_name' => $company_profile['commercial_name'] ?? null
+            'company_name' => $company_profile['company_name'] ?? 'N/A',
+            'rfc' => $company_profile['rfc'] ?? 'N/A',
+            'commercial_name' => $company_profile['commercial_name'] ?? 'N/A',
+            'email' => $company['email']
         ];
         
-        $rejectionModel->create($rejection_data);
+        // ========================================
+        // PASO 2: Guardar en historial de rechazos
+        // ========================================
+        require_once(__DIR__ . '/../Models/CompanyRejection.php');
+        $rejectionModel = new CompanyRejection();
+        
+        $rejection_saved = $rejectionModel->createRejection(
+            $company_data['company_name'],
+            $company_data['email'],
+            $company_data['contact_name'],
+            $comments,
+            $company_data['rfc'],
+            $company_data['commercial_name']
+        );
+        
+        if (!$rejection_saved) {
+            $_SESSION['error'] = "Error al guardar el historial de rechazo.";
+            header('Location: /SIEP/public/index.php?action=reviewCompanies');
+            exit;
+        }
         
         // ========================================
-        // RECHAZAR EMPRESA (cambiar status)
+        // PASO 3: Enviar email FORZOSO
         // ========================================
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        $emailService->notifyCompanyRejection($company_data, $comments);
         
-        if ($userModel->rejectUser($company_id)) {
-    
-    // ========================================
-    // 🆕 ENVIAR NOTIFICACIÓN FORZOSA A LA EMPRESA
-    // ========================================
-    
-    require_once(__DIR__ . '/../Services/EmailService.php');
-    $emailService = new EmailService();
-    
-    // Obtener datos de la empresa
-    $company = $userModel->findById($company_id);
-    $company_profile = $userModel->getCompanyProfileByUserId($company_id);
-    
-    $company_data = [
-        'contact_name' => $company['first_name'] . ' ' . 
-                         $company['last_name_p'] . ' ' . 
-                         $company['last_name_m'],
-        'company_name' => $company_profile['company_name'] ?? 'N/A',
-        'rfc' => $company_profile['rfc'] ?? 'N/A',
-        'email' => $company['email']
-    ];
-    
-    // Enviar email FORZOSO con motivo del rechazo
-    $emailService->notifyCompanyRejection($company_data, $comments);
-    
-    // ========================================
-    // FIN DE NOTIFICACIONES
-    // ========================================
-    
-    $_SESSION['success'] = "Empresa rechazada y notificada por email.";
-    header('Location: /SIEP/public/index.php?action=reviewCompanies');
-    exit;
-}
+        // ========================================
+        // PASO 4: ELIMINAR empresa de la base de datos
+        // ========================================
+        if ($userModel->deleteCompany($company_id)) {
+            $_SESSION['success'] = "✅ Empresa rechazada, notificada por email y guardada en historial. El email ahora está disponible para re-registro.";
+        } else {
+            $_SESSION['error'] = "❌ Error al eliminar la empresa del sistema.";
+        }
+        
+        header('Location: /SIEP/public/index.php?action=reviewCompanies');
+        exit;
     }
     
     $_SESSION['error'] = "Error al rechazar la empresa.";
     header('Location: /SIEP/public/index.php?action=reviewCompanies');
     exit;
 }
-
     /**
  * Aprobar una vacante
  */
