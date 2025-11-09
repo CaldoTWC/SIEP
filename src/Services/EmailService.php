@@ -1,11 +1,14 @@
 <?php
 /**
- * Servicio de Email
+ * Servicio de Email Simplificado
  * 
- * Gestiona el envío de correos electrónicos del sistema
+ * Gestiona únicamente los envíos de correo esenciales del sistema:
+ * 1. Rechazo de empresa (con motivo obligatorio)
+ * 2. Notificación genérica (para avisar que hay algo nuevo en la plataforma)
  * 
  * @package SIEP\Services
- * @version 3.0.0 - Agregadas notificaciones de vacantes
+ * @version 4.0.0 - Simplificado para Issue #4
+ * @date 2025-11-08
  */
 
 require_once(__DIR__ . '/../Config/email.php');
@@ -32,250 +35,81 @@ class EmailService {
     }
     
     // ========================================
-    // NOTIFICACIONES PARA ESTUDIANTES
+    // NOTIFICACIÓN DE RECHAZO DE EMPRESA (FORZOSO)
     // ========================================
     
     /**
-     * Notificar al estudiante que su acreditación fue recibida
+     * Notificar a la empresa que su registro fue rechazado
      * 
-     * @param array $student_data
-     * @param array $submission_data
+     * Este es el ÚNICO correo detallado que se envía.
+     * Motivo: Issue #4 - La empresa necesita saber por qué fue rechazada
+     * y debe poder re-registrarse.
+     * 
+     * @param array $company_data Datos de la empresa rechazada
+     * @param string $rejection_reason Motivo del rechazo (OBLIGATORIO)
      * @return bool
      */
-    public function notifyStudentAccreditationReceived($student_data, $submission_data) {
+    public function notifyCompanyRejection($company_data, $rejection_reason) {
         try {
             $mail = $this->getMailer();
             
-            // Destinatario
-            $mail->addAddress($student_data['email'], $student_data['full_name']);
+            $mail->addAddress($company_data['email'], $company_data['contact_name']);
             
-            // Asunto
-            $mail->Subject = '✅ Documentación de Acreditación Recibida - SIEP UPIICSA';
+            $mail->Subject = "❌ Registro de Empresa Rechazado - SIEP UPIICSA";
             
-            // Cuerpo HTML
-            $mail->Body = $this->templates->accreditationReceivedStudent($student_data, $submission_data);
-            
-            // Cuerpo texto plano
-            $mail->AltBody = $this->templates->accreditationReceivedStudentPlainText($student_data, $submission_data);
+            $mail->Body = $this->templates->companyRejectionNotification($company_data, $rejection_reason);
+            $mail->AltBody = $this->templates->companyRejectionNotificationPlainText($company_data, $rejection_reason);
             
             $success = $mail->send();
             
             if ($success) {
-                error_log("✅ Email de acreditación enviado a: {$student_data['email']}");
+                error_log("✅ Email de rechazo enviado a empresa: {$company_data['email']}");
             }
             
             return $success;
             
         } catch (Exception $e) {
-            error_log("❌ Error al enviar email de acreditación: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Notificar al estudiante sobre el estado de su acreditación
-     * 
-     * @param array $student_data
-     * @param string $status ('approved', 'rejected', 'pending')
-     * @param string $comments
-     * @return bool
-     */
-    public function notifyStudentAccreditationStatus($student_data, $status, $comments = '') {
-        try {
-            $mail = $this->getMailer();
-            
-            $mail->addAddress($student_data['email'], $student_data['full_name']);
-            
-            $status_text = $status === 'approved' ? 'Aprobada' : 'Requiere Revisión';
-            $mail->Subject = "🔔 Acreditación {$status_text} - SIEP UPIICSA";
-            
-            $mail->Body = $this->templates->accreditationStatusStudent($student_data, $status, $comments);
-            $mail->AltBody = $this->templates->accreditationStatusStudentPlainText($student_data, $status, $comments);
-            
-            $success = $mail->send();
-            
-            if ($success) {
-                error_log("✅ Email de estado de acreditación enviado a: {$student_data['email']}");
-            }
-            
-            return $success;
-            
-        } catch (Exception $e) {
-            error_log("❌ Error al enviar email de estado acreditación: " . $e->getMessage());
+            error_log("❌ Error al enviar email de rechazo a empresa: " . $e->getMessage());
             return false;
         }
     }
     
     // ========================================
-    // NOTIFICACIONES PARA EMPRESAS
+    // NOTIFICACIÓN GENÉRICA
     // ========================================
     
     /**
-     * Notificar a la empresa sobre el estado de su registro
+     * Enviar notificación genérica a usuario
      * 
-     * @param array $company_data
-     * @param string $status ('approved', 'rejected')
-     * @param string $comments
+     * Este correo solo avisa que hay una nueva notificación en la plataforma.
+     * NO incluye detalles, solo invita al usuario a ingresar al sistema.
+     * 
+     * @param string $email Email del destinatario
+     * @param string $name Nombre del destinatario
+     * @param string $notification_type Tipo de notificación ('student', 'company')
      * @return bool
      */
-    public function notifyCompanyStatus($company_data, $status, $comments = '') {
+    public function sendGenericNotification($email, $name, $notification_type = 'general') {
         try {
             $mail = $this->getMailer();
             
-            $mail->addAddress($company_data['email'], $company_data['company_name']);
+            $mail->addAddress($email, $name);
             
-            $status_text = $status === 'approved' ? 'Aprobado' : 'Requiere Revisión';
-            $mail->Subject = "🏢 Registro de Empresa {$status_text} - SIEP UPIICSA";
+            $mail->Subject = "🔔 Nueva Notificación - SIEP UPIICSA";
             
-            $mail->Body = $this->templates->companyRegistrationStatus($company_data, $status, $comments);
-            $mail->AltBody = $this->templates->companyRegistrationStatusPlainText($company_data, $status, $comments);
+            $mail->Body = $this->templates->genericNotification($name, $notification_type);
+            $mail->AltBody = $this->templates->genericNotificationPlainText($name, $notification_type);
             
             $success = $mail->send();
             
             if ($success) {
-                error_log("✅ Email de estado empresa enviado a: {$company_data['email']}");
+                error_log("✅ Notificación genérica enviada a: {$email}");
             }
             
             return $success;
             
         } catch (Exception $e) {
-            error_log("❌ Error al enviar email de estado empresa: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Notificar a la empresa que su vacante fue aprobada
-     * 
-     * @param array $vacancy_data Datos de la vacante
-     * @param array $company_data Datos de la empresa
-     * @param string $comments Comentarios opcionales de UPIS
-     * @return bool
-     */
-    public function notifyVacancyApproved($vacancy_data, $company_data, $comments = '') {
-        try {
-            $mail = $this->getMailer();
-            
-            $mail->addAddress($company_data['email'], $company_data['company_name']);
-            
-            $mail->Subject = "✅ Vacante Aprobada - {$vacancy_data['title']} - SIEP UPIICSA";
-            
-            $mail->Body = $this->templates->vacancyApproved($vacancy_data, $company_data, $comments);
-            $mail->AltBody = $this->templates->vacancyApprovedPlainText($vacancy_data, $company_data, $comments);
-            
-            $success = $mail->send();
-            
-            if ($success) {
-                error_log("✅ Email de vacante aprobada enviado a: {$company_data['email']}");
-            }
-            
-            return $success;
-            
-        } catch (Exception $e) {
-            error_log("❌ Error al enviar email de vacante aprobada: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Notificar a la empresa que su vacante fue rechazada
-     * 
-     * @param array $vacancy_data Datos de la vacante
-     * @param array $company_data Datos de la empresa
-     * @param string $rejection_reason Razón del rechazo (OBLIGATORIO)
-     * @return bool
-     */
-    public function notifyVacancyRejected($vacancy_data, $company_data, $rejection_reason) {
-        try {
-            $mail = $this->getMailer();
-            
-            $mail->addAddress($company_data['email'], $company_data['company_name']);
-            
-            $mail->Subject = "⚠️ Vacante Requiere Correcciones - {$vacancy_data['title']} - SIEP UPIICSA";
-            
-            $mail->Body = $this->templates->vacancyRejected($vacancy_data, $company_data, $rejection_reason);
-            $mail->AltBody = $this->templates->vacancyRejectedPlainText($vacancy_data, $company_data, $rejection_reason);
-            
-            $success = $mail->send();
-            
-            if ($success) {
-                error_log("✅ Email de vacante rechazada enviado a: {$company_data['email']}");
-            }
-            
-            return $success;
-            
-        } catch (Exception $e) {
-            error_log("❌ Error al enviar email de vacante rechazada: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    // ========================================
-    // NOTIFICACIONES PARA UPIS
-    // ========================================
-    
-    /**
-     * Notificar a UPIS cuando una empresa publica una nueva vacante
-     * 
-     * @param array $vacancy_data Datos de la vacante
-     * @param array $company_data Datos de la empresa
-     * @return bool
-     */
-    public function notifyUPISNewVacancy($vacancy_data, $company_data) {
-        try {
-            $mail = $this->getMailer();
-            
-            // Email de UPIS desde variables de entorno o default
-            $upis_email = getenv('UPIS_EMAIL') ?: 'upis@upiicsa.ipn.mx';
-            $mail->addAddress($upis_email, 'UPIS - Revisiones');
-            
-            $mail->Subject = "🆕 Nueva Vacante Pendiente - {$company_data['company_name']} - SIEP";
-            
-            $mail->Body = $this->templates->newVacancyUPIS($vacancy_data, $company_data);
-            $mail->AltBody = $this->templates->newVacancyUPISPlainText($vacancy_data, $company_data);
-            
-            $success = $mail->send();
-            
-            if ($success) {
-                error_log("✅ Email de nueva vacante enviado a UPIS: {$upis_email}");
-            }
-            
-            return $success;
-            
-        } catch (Exception $e) {
-            error_log("❌ Error al enviar email a UPIS: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Notificar a UPIS cuando una empresa se registra
-     * 
-     * @param array $company_data Datos de la empresa
-     * @return bool
-     */
-    public function notifyUPISNewCompany($company_data) {
-        try {
-            $mail = $this->getMailer();
-            
-            $upis_email = getenv('UPIS_EMAIL') ?: 'upis@upiicsa.ipn.mx';
-            $mail->addAddress($upis_email, 'UPIS - Revisiones');
-            
-            $mail->Subject = "🏢 Nueva Empresa Registrada - {$company_data['company_name']} - SIEP";
-            
-            $mail->Body = $this->templates->newCompanyUPIS($company_data);
-            $mail->AltBody = $this->templates->newCompanyUPISPlainText($company_data);
-            
-            $success = $mail->send();
-            
-            if ($success) {
-                error_log("✅ Email de nueva empresa enviado a UPIS: {$upis_email}");
-            }
-            
-            return $success;
-            
-        } catch (Exception $e) {
-            error_log("❌ Error al enviar email de nueva empresa a UPIS: " . $e->getMessage());
+            error_log("❌ Error al enviar notificación genérica: " . $e->getMessage());
             return false;
         }
     }

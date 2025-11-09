@@ -256,33 +256,38 @@ public function rejectCompany() {
         // ========================================
         
         if ($userModel->rejectUser($company_id)) {
-            
-            // ========================================
-            // ENVIAR NOTIFICACIÓN A LA EMPRESA
-            // ========================================
-            
-            require_once(__DIR__ . '/../Services/EmailService.php');
-            $emailService = new EmailService();
-            
-            $company_data = [
-                'user_id' => $company_id,
-                'contact_name' => $rejection_data['contact_name'],
-                'company_name' => $rejection_data['company_name'],
-                'rfc' => $rejection_data['rfc'] ?? 'N/A',
-                'email' => $rejection_data['contact_email']
-            ];
-            
-            // Enviar notificación de rechazo con comentarios
-            $emailService->notifyCompanyStatus($company_data, 'rejected', $comments);
-            
-            // ========================================
-            // FIN DE NOTIFICACIONES
-            // ========================================
-            
-            $_SESSION['success'] = "Empresa rechazada, guardada en historial y notificada por email.";
-            header('Location: /SIEP/public/index.php?action=reviewCompanies');
-            exit;
-        }
+    
+    // ========================================
+    // 🆕 ENVIAR NOTIFICACIÓN FORZOSA A LA EMPRESA
+    // ========================================
+    
+    require_once(__DIR__ . '/../Services/EmailService.php');
+    $emailService = new EmailService();
+    
+    // Obtener datos de la empresa
+    $company = $userModel->findById($company_id);
+    $company_profile = $userModel->getCompanyProfileByUserId($company_id);
+    
+    $company_data = [
+        'contact_name' => $company['first_name'] . ' ' . 
+                         $company['last_name_p'] . ' ' . 
+                         $company['last_name_m'],
+        'company_name' => $company_profile['company_name'] ?? 'N/A',
+        'rfc' => $company_profile['rfc'] ?? 'N/A',
+        'email' => $company['email']
+    ];
+    
+    // Enviar email FORZOSO con motivo del rechazo
+    $emailService->notifyCompanyRejection($company_data, $comments);
+    
+    // ========================================
+    // FIN DE NOTIFICACIONES
+    // ========================================
+    
+    $_SESSION['success'] = "Empresa rechazada y notificada por email.";
+    header('Location: /SIEP/public/index.php?action=reviewCompanies');
+    exit;
+}
     }
     
     $_SESSION['error'] = "Error al rechazar la empresa.";
@@ -321,18 +326,7 @@ public function approveVacancy() {
     
     if ($vacancyModel->approve($vacancy_id, $reviewer_id)) {
         
-        // Enviar email de aprobación
-        require_once(__DIR__ . '/../Services/EmailService.php');
-        $emailService = new EmailService();
-        
-        $company_data = [
-            'email' => $vacancy['company_email'],
-            'company_name' => $vacancy['company_name']
-        ];
-        
-        $emailService->notifyVacancyApproved($vacancy, $company_data, $comments);
-        
-        $_SESSION['success'] = "✅ Vacante aprobada y notificación enviada por email.";
+       $_SESSION['success'] = "✅ Vacante aprobada correctamente.";
     } else {
         $_SESSION['error'] = "❌ Error al aprobar la vacante.";
     }
@@ -671,23 +665,7 @@ public function approveAccreditation() {
     
     if ($accreditationModel->approve($submission_id, $reviewer_id, $comments)) {
         
-        // Enviar notificación al estudiante
-        require_once(__DIR__ . '/../Services/EmailService.php');
-        $emailService = new EmailService();
-        
-        $student_data = [
-            'user_id' => $submission['student_user_id'],
-            'full_name' => $submission['first_name'] . ' ' . 
-                           $submission['last_name_p'] . ' ' . 
-                           $submission['last_name_m'],
-            'boleta' => $submission['boleta'],
-            'career' => $submission['career'],
-            'email' => $submission['email']
-        ];
-        
-        $emailService->notifyStudentAccreditationStatus($student_data, 'approved', $comments);
-        
-        $_SESSION['success'] = "✅ Solicitud aprobada y estudiante notificado.";
+        $_SESSION['success'] = "✅ Solicitud aprobada correctamente.";
     } else {
         $_SESSION['error'] = "❌ Error al aprobar la solicitud.";
     }
@@ -738,24 +716,7 @@ public function rejectAccreditation() {
     $reviewer_id = $_SESSION['user_id'];
     
     if ($accreditationModel->reject($submission_id, $reviewer_id, $comments)) {
-        
-        // Enviar notificación al estudiante con comentarios
-        require_once(__DIR__ . '/../Services/EmailService.php');
-        $emailService = new EmailService();
-        
-        $student_data = [
-            'user_id' => $submission['student_user_id'],
-            'full_name' => $submission['first_name'] . ' ' . 
-                           $submission['last_name_p'] . ' ' . 
-                           $submission['last_name_m'],
-            'boleta' => $submission['boleta'],
-            'career' => $submission['career'],
-            'email' => $submission['email']
-        ];
-        
-        $emailService->notifyStudentAccreditationStatus($student_data, 'rejected', $comments);
-        
-        $_SESSION['success'] = "❌ Solicitud rechazada y estudiante notificado.";
+        $_SESSION['success'] = "❌ Solicitud rechazada correctamente.";
     } else {
         $_SESSION['error'] = "Error al rechazar la solicitud.";
     }

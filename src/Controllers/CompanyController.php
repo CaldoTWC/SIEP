@@ -177,41 +177,7 @@ public function postVacancy() {
     // Crear la vacante en la base de datos
     if ($vacancy->create()) {
         
-        // ============================================
-        // NOTIFICAR A UPIS QUE HAY NUEVA VACANTE
-        // ============================================
-        try {
-            require_once(__DIR__ . '/../Services/EmailService.php');
-            $emailService = new EmailService();
-            
-            // Preparar datos de la vacante para el email
-            $vacancy_data = [
-                'title' => $vacancy->title,
-                'num_vacancies' => $vacancy->num_vacancies,
-                'economic_support' => $vacancy->economic_support,
-                'start_date' => $vacancy->start_date,
-                'end_date' => $vacancy->end_date,
-                'modality' => $vacancy->modality
-            ];
-            
-            // Preparar datos de la empresa para el email
-            $company_data = [
-                'company_name' => $company_profile['company_name'],
-                'email' => $company_profile['email']
-            ];
-            
-            // Enviar email a UPIS
-            $emailService->notifyUPISNewVacancy($vacancy_data, $company_data);
-            
-            error_log("✅ Notificación enviada a UPIS sobre nueva vacante: {$vacancy->title}");
-            
-        } catch (Exception $e) {
-            // No detener el proceso si falla el email, solo registrar
-            error_log("⚠️ Error al enviar notificación a UPIS: " . $e->getMessage());
-        }
-        // ============================================
-        // FIN DE NOTIFICACIONES
-        // ============================================
+
         
         $_SESSION['success'] = "✅ Vacante publicada exitosamente. Está pendiente de aprobación por UPIS.";
         header('Location: /SIEP/public/index.php?action=companyDashboard');
