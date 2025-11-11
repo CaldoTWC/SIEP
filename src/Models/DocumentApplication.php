@@ -5,7 +5,7 @@
  * Gestiona las solicitudes de cartas de presentación de estudiantes
  * 
  * @package SIEP\Models
- * @version 2.0.0 - Corregido fetchAll()
+ * @version 3.0.0 - Sistema de 3 estados (pending, approved, completed)
  */
 
 require_once(__DIR__ . '/../Config/Database.php');
@@ -65,15 +65,28 @@ class DocumentApplication {
         return $stmt->execute();
     }
     
+    // ========================================================================
+    // MÉTODOS PARA SISTEMA DE 3 ESTADOS (pending, approved, completed)
+    // ========================================================================
+    
     /**
-     * Obtener solicitudes de cartas pendientes de revisión
+     * Obtener solicitudes de cartas PENDIENTES de revisión
      * 
      * @return array
      */
-    public function getPendingPresentationLetters() {
+    public function getPendingLetters() {
         $sql = "SELECT 
-                    da.id, da.created_at, da.credits_percentage, da.current_semester,
-                    da.target_company_name, da.transcript_path,
+                    da.id, 
+                    da.created_at, 
+                    da.credits_percentage, 
+                    da.current_semester,
+                    da.target_company_name, 
+                    da.transcript_path,
+                    da.has_specific_recipient,
+                    da.recipient_name,
+                    da.recipient_position,
+                    da.requires_hours,
+                    da.letter_template_type,
                     u.first_name, u.last_name_p, u.last_name_m, u.email,
                     sp.boleta, sp.career
                 FROM document_applications da
@@ -86,7 +99,142 @@ class DocumentApplication {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         
-        return $stmt->fetchAll(PDO::FETCH_ASSOC); // ✅ CORRECTO: fetchAll()
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener solicitudes APROBADAS (listas para descargar)
+     * 
+     * @return array
+     */
+    public function getApprovedLetters() {
+        $sql = "SELECT 
+                    da.id, 
+                    da.created_at, 
+                    da.reviewed_at,
+                    da.letter_number,
+                    da.credits_percentage,
+                    da.current_semester,  
+                    da.target_company_name,
+                    da.has_specific_recipient,
+                    da.recipient_name,
+                    da.recipient_position,
+                    da.requires_hours,
+                    da.letter_template_type,
+                    u.first_name, u.last_name_p, u.last_name_m, u.email,
+                    sp.boleta, sp.career
+                FROM document_applications da
+                JOIN users u ON da.student_user_id = u.id
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE da.status = 'approved' 
+                  AND da.application_type = 'presentation_letter'
+                ORDER BY da.reviewed_at DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Obtener solicitudes COMPLETADAS (finalizadas y entregadas)
+     * 
+     * @return array
+     */
+    public function getCompletedLetters() {
+        $sql = "SELECT 
+                    da.id, 
+                    da.created_at, 
+                    da.reviewed_at,
+                    da.completed_at,
+                    da.letter_number,
+                    da.credits_percentage,
+                    da.target_company_name,
+                    da.has_specific_recipient,
+                    da.recipient_name,
+                    da.recipient_position,
+                    da.requires_hours,
+                    da.letter_template_type,
+                    u.first_name, u.last_name_p, u.last_name_m, u.email,
+                    sp.boleta, sp.career
+                FROM document_applications da
+                JOIN users u ON da.student_user_id = u.id
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE da.status = 'completed' 
+                  AND da.application_type = 'presentation_letter'
+                ORDER BY da.completed_at DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Marcar una carta como completada
+     * 
+     * @param int $application_id
+     * @return bool
+     */
+    public function markAsCompleted($application_id) {
+        $sql = "UPDATE document_applications 
+                SET status = 'completed',
+                    completed_at = NOW()
+                WHERE id = :application_id
+                  AND status = 'approved'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':application_id', $application_id, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Obtener carta para re-descargar (approved o completed)
+     * 
+     * @param int $application_id
+     * @return array|false
+     */
+    public function getLetterForDownload($application_id) {
+        $sql = "SELECT 
+                    da.id as application_id,
+                    da.letter_number,
+                    da.letter_template_type,
+                    da.has_specific_recipient,
+                    da.recipient_name,
+                    da.recipient_position,
+                    da.requires_hours,
+                    da.credits_percentage as percentage_progress,
+                    u.first_name,
+                    u.last_name_p,
+                    u.last_name_m,
+                    sp.boleta,
+                    sp.career
+                FROM document_applications da
+                JOIN users u ON da.student_user_id = u.id
+                JOIN student_profiles sp ON u.id = sp.user_id
+                WHERE da.id = :application_id
+                  AND da.status IN ('approved', 'completed')
+                  AND da.application_type = 'presentation_letter'";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':application_id', $application_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    // ========================================================================
+    // MÉTODOS LEGACY (Compatibilidad con código existente)
+    // ========================================================================
+    
+    /**
+     * Obtener solicitudes de cartas pendientes de revisión
+     * 
+     * @return array
+     */
+    public function getPendingPresentationLetters() {
+        return $this->getPendingLetters();
     }
     
     /**
@@ -95,28 +243,8 @@ class DocumentApplication {
      * @return array
      */
     public function getApprovedPresentationLetters() {
-    $sql = "SELECT 
-                da.id, 
-                da.created_at, 
-                da.updated_at, 
-                da.reviewed_at, 
-                da.credits_percentage,
-                da.current_semester,  
-                da.target_company_name,
-                u.first_name, u.last_name_p, u.last_name_m, u.email,
-                sp.boleta, sp.career
-            FROM document_applications da
-            JOIN users u ON da.student_user_id = u.id
-            JOIN student_profiles sp ON u.id = sp.user_id
-            WHERE da.status = 'approved' 
-              AND da.application_type = 'presentation_letter'
-            ORDER BY da.updated_at DESC";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute();
-    
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+        return $this->getApprovedLetters();
+    }
     
     /**
      * Obtener solicitudes de un estudiante específico
@@ -133,7 +261,7 @@ class DocumentApplication {
         $stmt->bindParam(':student_user_id', $student_user_id, PDO::PARAM_INT);
         $stmt->execute();
         
-        return $stmt->fetchAll(PDO::FETCH_ASSOC); // ✅ CORRECTO: fetchAll()
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
     /**
@@ -156,7 +284,7 @@ class DocumentApplication {
         $stmt->bindParam(':application_id', $application_id, PDO::PARAM_INT);
         $stmt->execute();
         
-        return $stmt->fetch(PDO::FETCH_ASSOC); // ✅ CORRECTO: fetch() (singular)
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
     /**
