@@ -16,7 +16,7 @@ require_once(__DIR__ . '/../Models/Accreditation.php');
 require_once(__DIR__ . '/../Models/CompletedProcess.php');
 require_once(__DIR__ . '/../Models/StudentDocument.php');
 require_once(__DIR__ . '/../Lib/Session.php');
-require_once(__DIR__ . '/../Services/DocumentService.php'); // ✅ CAMBIO: Usar DocumentService en lugar de DocumentGenerator
+require_once(__DIR__ . '/../Lib/DocumentGenerator.php'); 
 
 class UpisController {
 
@@ -492,8 +492,7 @@ class UpisController {
             exit;
         }
         
-        // ✅ PASO 4: Generar cada PDF
-        require_once(__DIR__ . '/../Services/DocumentService.php');
+        require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
         $docGenerator = new DocumentService();
         
         foreach ($students_data as $student) {
@@ -787,7 +786,7 @@ class UpisController {
         $completedModel = new CompletedProcess();
         $processes = $completedModel->getAll();
         
-        require_once(__DIR__ . '/../Services/DocumentService.php');
+        require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
         $docService = new DocumentService();
         $docService->generateHistoryReport($processes);
     }
@@ -1259,8 +1258,7 @@ public function downloadAllApprovedLettersFromHub() {
         exit;
     }
     
-    // ✅ PASO 4: Generar cada PDF
-    require_once(__DIR__ . '/../Services/DocumentService.php');
+    require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
     $docGenerator = new DocumentService();
     
     foreach ($students_data as $student) {
@@ -1348,8 +1346,7 @@ public function downloadSingleApprovedLetter() {
         exit;
     }
     
-    // Generar PDF
-    require_once(__DIR__ . '/../Services/DocumentService.php');
+    require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
     $docService = new DocumentService();
     
     $student_data_for_pdf = [
@@ -1409,8 +1406,7 @@ public function downloadCompletedLetter() {
         exit;
     }
     
-    // Generar PDF
-    require_once(__DIR__ . '/../Services/DocumentService.php');
+    require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
     $docService = new DocumentService();
     
     $student_data_for_pdf = [
@@ -1468,15 +1464,15 @@ public function uploadSignedLettersToHub() {
             continue;
         }
 
-        // Formato esperado: BOLETA_CPSF.pdf
-        $filename_no_ext = pathinfo($filename, PATHINFO_FILENAME);
-        $parts = explode('_', $filename_no_ext);
-        
-        if (count($parts) !== 2 || $parts[1] !== 'CPSF') {
-            $error_count++;
-            $errors[] = "Formato de nombre incorrecto: {$filename} (debe ser BOLETA_CPSF.pdf)";
-            continue;
-        }
+        // Formato esperado: BOLETA_CP.pdf
+$filename_no_ext = pathinfo($filename, PATHINFO_FILENAME);
+$parts = explode('_', $filename_no_ext);
+
+if (count($parts) !== 2 || $parts[1] !== 'CP') {  // ✅ CORRECTO
+    $error_count++;
+    $errors[] = "Formato de nombre incorrecto: {$filename} (debe ser BOLETA_CP.pdf)";
+    continue;
+}
 
         $boleta = $parts[0];
 

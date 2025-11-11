@@ -612,10 +612,10 @@ $session->guard(['upis', 'admin']);
                 </div>
                 
                 <div class="format-example">
-                    <strong>⚠️ Formato de Nombres:</strong><br>
-                    ✅ Correcto: <span style="color: green;">2022630554_CPSF.pdf</span><br>
-                    ❌ Incorrecto: <span style="color: red;">carta_juan.pdf, 2022630554_CP.pdf</span>
-                </div>
+    <strong>⚠️ Formato de Nombres:</strong><br>
+    ✅ Correcto: <span style="color: green;">2022630554_CP.pdf</span><br>
+    ❌ Incorrecto: <span style="color: red;">carta_juan.pdf, 2022630554_CPSF.pdf, 2022630554.pdf</span>
+</div>
 
                 <div class="upload-section">
                     <form action="/SIEP/public/index.php?action=uploadSignedLettersToHub" 
