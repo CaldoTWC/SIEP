@@ -25,7 +25,36 @@ class CompanyRejection {
     }
     
     /**
-     * Crear un nuevo registro de rechazo en el historial
+     * Crear un nuevo registro de rechazo (Método simplificado con parámetros directos)
+     * 
+     * @param string $company_name Nombre de la empresa
+     * @param string $contact_email Email de contacto
+     * @param string $contact_name Nombre del contacto
+     * @param string $rejection_reason Razón del rechazo
+     * @param string $rfc RFC de la empresa
+     * @param string $commercial_name Nombre comercial
+     * @return bool True si fue exitoso
+     */
+    public function createRejection($company_name, $contact_email, $contact_name, $rejection_reason, $rfc = null, $commercial_name = null) {
+        $sql = "INSERT INTO company_rejections_history 
+                (company_name, contact_email, contact_name, rejection_reason, rfc, commercial_name) 
+                VALUES 
+                (:company_name, :contact_email, :contact_name, :rejection_reason, :rfc, :commercial_name)";
+        
+        $stmt = $this->conn->prepare($sql);
+        
+        $stmt->bindParam(':company_name', $company_name);
+        $stmt->bindParam(':contact_email', $contact_email);
+        $stmt->bindParam(':contact_name', $contact_name);
+        $stmt->bindParam(':rejection_reason', $rejection_reason);
+        $stmt->bindParam(':rfc', $rfc);
+        $stmt->bindParam(':commercial_name', $commercial_name);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Crear un nuevo registro de rechazo en el historial (Método con array)
      * 
      * @param array $data Datos del rechazo [company_name, contact_email, contact_name, rejection_reason, rfc, commercial_name]
      * @return bool True si fue exitoso
