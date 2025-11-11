@@ -660,4 +660,150 @@ public function getTemplateUsageStats() {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+/**
+ * Obtener cartas por status
+ */
+public function getLettersByStatus($status) {
+    $sql = "SELECT da.*, 
+                   s.boleta, s.first_name, s.last_name_p, s.last_name_m,
+                   s.career, s.percentage_progress,
+                   c.company_name,
+                   da.created_at as request_date
+            FROM document_applications da
+            INNER JOIN students s ON da.student_id = s.id
+            LEFT JOIN companies c ON da.company_id = c.id
+            WHERE da.application_type = 'presentation_letter'
+            AND da.status = ?
+            ORDER BY da.created_at DESC";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([$status]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener detalles completos de una carta
+ */
+public function getLetterDetailsById($id) {
+    $sql = "SELECT da.*, 
+                   s.boleta, s.first_name, s.last_name_p, s.last_name_m,
+                   s.career, s.percentage_progress, s.email as student_email,
+                   c.company_name, c.commercial_name,
+                   u.email as company_email
+            FROM document_applications da
+            INNER JOIN students s ON da.student_id = s.id
+            LEFT JOIN companies c ON da.company_id = c.id
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE da.id = ?
+            AND da.application_type = 'presentation_letter'";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Aprobar una carta individual
+ */
+public function approveSingle($application_id, $reviewer_id, $comments = '') {
+    $sql = "UPDATE document_applications 
+            SET status = 'approved',
+                reviewed_by = ?,
+                reviewed_at = NOW(),
+                comments = ?
+            WHERE id = ?
+            AND status = 'pending'";
+    
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute([$reviewer_id, $comments, $application_id]);
+}
+
+/**
+ * Rechazar una carta individual
+ */
+public function rejectSingle($application_id, $reviewer_id, $rejection_reason) {
+    $sql = "UPDATE document_applications 
+            SET status = 'rejected',
+                reviewed_by = ?,
+                reviewed_at = NOW(),
+                comments = ?
+            WHERE id = ?
+            AND status = 'pending'";
+    
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute([$reviewer_id, $rejection_reason, $application_id]);
+}
+
+/**
+ * Marcar carta como completada
+ */
+public function markAsCompleted($application_id) {
+    $sql = "UPDATE document_applications 
+            SET status = 'completed',
+                completed_at = NOW()
+            WHERE id = ?
+            AND status = 'approved'";
+    
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute([$application_id]);
+}
+
+/**
+ * Obtener carta aprobada por student_id
+ */
+public function getApprovedLetterByStudentId($student_id) {
+    $sql = "SELECT * FROM document_applications 
+            WHERE student_id = ?
+            AND application_type = 'presentation_letter'
+            AND status = 'approved'
+            ORDER BY created_at DESC
+            LIMIT 1";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([$student_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener datos del estudiante para generar la carta
+ */
+public function getStudentDataForLetter($application_id) {
+    $sql = "SELECT s.*, da.has_specific_recipient, da.recipient_name, 
+                   da.recipient_position, da.requires_hours, da.letter_template_type,
+                   da.id as application_id
+            FROM document_applications da
+            INNER JOIN students s ON da.student_id = s.id
+            WHERE da.id = ?";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([$application_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Obtener datos de estudiantes para múltiples cartas aprobadas
+ */
+public function getApprovedStudentDataForLetters($application_ids) {
+    if (empty($application_ids)) {
+        return [];
+    }
+    
+    $placeholders = str_repeat('?,', count($application_ids) - 1) . '?';
+    
+    $sql = "SELECT da.id as application_id, da.letter_number,
+                   da.has_specific_recipient, da.recipient_name, 
+                   da.recipient_position, da.requires_hours, da.letter_template_type,
+                   s.boleta, s.first_name, s.last_name_p, s.last_name_m,
+                   s.career, s.percentage_progress
+            FROM document_applications da
+            INNER JOIN students s ON da.student_id = s.id
+            WHERE da.id IN ($placeholders)
+            AND da.status = 'approved'
+            ORDER BY s.boleta ASC";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute($application_ids);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 }

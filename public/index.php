@@ -261,11 +261,76 @@ switch ($action) {
         $reportController->exportCompanyAnalysisExcel();
         break;
     
-    // --- Gestión de Cartas ---
-    case 'reviewLetters':
+        // ===================================================================
+    // --- GESTIÓN DE CARTAS DE PRESENTACIÓN (HUB MODERNIZADO) ---
+    // ===================================================================
+    
+    // --- Hub Principal de Cartas ---
+    case 'presentationLettersHub':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
-        $upisController->reviewLetters();
+        $upisController->presentationLettersHub();
+        break;
+    
+    // --- Ver Detalles de una Solicitud ---
+    case 'viewLetterDetails':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->viewLetterDetails();
+        break;
+    
+    // --- Aprobar/Rechazar Individual ---
+    case 'approveSingleLetter':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->approveSingleLetter();
+        break;
+    case 'rejectSingleLetter':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->rejectSingleLetter();
+        break;
+    
+    // --- Descargar Cartas Aprobadas ---
+    case 'downloadAllApprovedLettersFromHub':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadAllApprovedLettersFromHub();
+        break;
+    case 'downloadSingleApprovedLetter':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadSingleApprovedLetter();
+        break;
+    
+    // --- Subir Cartas Firmadas (Nuevo Flujo) ---
+    case 'uploadSignedLettersToHub':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->uploadSignedLettersToHub();
+        break;
+    
+    // --- Descargar Cartas Completadas ---
+    case 'downloadCompletedLetter':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadCompletedLetter();
+        break;
+    
+    // --- Limpiar Historial de Completadas ---
+    case 'clearCompletedLetters':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->clearCompletedLetters();
+        break;
+    
+    // ===================================================================
+    // --- GESTIÓN DE CARTAS (RUTAS LEGACY - MANTENER POR COMPATIBILIDAD) ---
+    // ===================================================================
+    case 'reviewLetters':
+        // Redirigir al nuevo hub
+        header('Location: /SIEP/public/index.php?action=presentationLettersHub');
+        exit;
         break;
     case 'processLetterRequests':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
@@ -283,9 +348,9 @@ switch ($action) {
         $upisController->clearAllApprovedLetters();
         break;
     case 'showUploadDocumentsForm':
-        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
-        $upisController = new UpisController();
-        $upisController->showUploadDocumentsForm();
+        // Redirigir al tab de upload del hub
+        header('Location: /SIEP/public/index.php?action=presentationLettersHub&tab=upload');
+        exit;
         break;
     case 'uploadSignedLetters':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');

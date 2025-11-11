@@ -75,13 +75,14 @@ $session->guard(['upis', 'admin']);
                 <div class="counter"><?php echo $pendingVacanciesCount; ?></div>
             </a>
 
-            <a href="/SIEP/public/index.php?action=reviewLetters" class="task-card">
-                <div class="info">
-                    <h3>Cartas de Presentación</h3>
-                    <p>Gestionar solicitudes de estudiantes.</p>
-                </div>
-                <div class="counter"><?php echo $pendingLettersCount; ?></div>
-            </a>
+            <!-- Cambiar la línea del task-card de cartas -->
+<a href="/SIEP/public/index.php?action=presentationLettersHub" class="task-card">
+    <div class="info">
+        <h3>📝 Cartas de Presentación</h3>
+        <p>Gestionar solicitudes de estudiantes.</p>
+    </div>
+    <div class="counter"><?php echo $pendingLettersCount; ?></div>
+</a>
 
             <!-- Gestión de Plantillas -->
 <a href="/SIEP/public/index.php?action=manageTemplates" class="task-card">
