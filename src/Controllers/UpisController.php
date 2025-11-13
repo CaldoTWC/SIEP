@@ -22,9 +22,15 @@ require_once(__DIR__ . '/NotificationController.php');
 class UpisController {
 
     private $session;
+    private $conn;
 
     public function __construct() {
         $this->session = new Session();
+        
+        // Obtener conexión a la base de datos
+        require_once(__DIR__ . '/../../config.php');
+        global $conn;
+        $this->conn = $conn;
     }
     
     // ========================================================================
@@ -140,7 +146,7 @@ class UpisController {
         if ($userModel->approveUser($company_id)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $notificationController->notifyEmpresaAprobada($company_id, $company_id);
     
     // ... código existente de email comentado ...
@@ -281,7 +287,7 @@ class UpisController {
             
             // ✅ NOTIFICACIÓN
 require_once(__DIR__ . '/../../config.php');
-$notificationController = new NotificationController($conn);
+$notificationController = new NotificationController($this->conn);
 $notificationController->notifyEmpresaRechazada($company_id, $company_id, $comments);
 
 if ($userModel->deleteCompany($company_id)) {
@@ -329,7 +335,7 @@ if ($userModel->deleteCompany($company_id)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
     require_once(__DIR__ . '/../Models/CompanyProfile.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $companyProfileModel = new CompanyProfile();
     $companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
     if ($companyProfile) {
@@ -397,7 +403,7 @@ if ($userModel->deleteCompany($company_id)) {
 // ✅ NOTIFICACIÓN
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/../Models/CompanyProfile.php');
-$notificationController = new NotificationController($conn);
+$notificationController = new NotificationController($this->conn);
 $companyProfileModel = new CompanyProfile();
 $companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
 if ($companyProfile) {
@@ -738,7 +744,7 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
         if ($accreditationModel->approve($submission_id, $reviewer_id, $comments)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $notificationController->notifyAcreditacionAprobada($submission['student_user_id'], $submission_id);
     
     $_SESSION['success'] = "✅ Solicitud aprobada correctamente.";
@@ -794,7 +800,7 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
         if ($accreditationModel->reject($submission_id, $reviewer_id, $comments)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $notificationController->notifyAcreditacionRechazada($submission['student_user_id'], $submission_id, $comments);
     
     $_SESSION['success'] = "❌ Solicitud rechazada correctamente.";
@@ -1033,7 +1039,7 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
 // ✅ NOTIFICACIÓN
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/../Models/CompanyProfile.php');
-$notificationController = new NotificationController($conn);
+$notificationController = new NotificationController($this->conn);
 $companyProfileModel = new CompanyProfile();
 $companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
 if ($companyProfile) {
@@ -1209,7 +1215,7 @@ public function approveSingleLetter() {
     if ($applicationModel->approveSingle($application_id, $reviewer_id, $comments)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $letter = $applicationModel->findById($application_id);
     if ($letter) {
         $notificationController->notifyCartaAprobada($letter['student_user_id'], $application_id);
@@ -1252,7 +1258,7 @@ public function rejectSingleLetter() {
     if ($applicationModel->rejectSingle($application_id, $reviewer_id, $rejection_reason)) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $letter = $applicationModel->findById($application_id);
     if ($letter) {
         $notificationController->notifyCartaRechazada($letter['student_user_id'], $application_id, $rejection_reason);
@@ -1574,7 +1580,7 @@ if (count($parts) !== 2 || $parts[1] !== 'CP') {  // ✅ CORRECTO
                 if ($applicationModel->markAsCompleted($application['id'])) {
     // ✅ NOTIFICACIÓN
     require_once(__DIR__ . '/../../config.php');
-    $notificationController = new NotificationController($conn);
+    $notificationController = new NotificationController($this->conn);
     $notificationController->notifyCartaFirmadaDisponible($student_data['id'], $application['id']);
     
     $success_count++;
