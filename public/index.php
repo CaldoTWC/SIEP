@@ -373,6 +373,38 @@ switch ($action) {
         $upisController->downloadHistoryReport();
         break;
     
+    // Notificaciones - API
+case 'getNotificationsDropdown':
+    require_once 'src/controllers/NotificationController.php';
+    $controller = new NotificationController($conn);
+    $controller->getNotificationsDropdown();
+    break;
+
+case 'getUnreadCount':
+    require_once 'src/controllers/NotificationController.php';
+    $controller = new NotificationController($conn);
+    $controller->getUnreadCount();
+    break;
+
+case 'markNotificationAsRead':
+    require_once 'src/controllers/NotificationController.php';
+    $controller = new NotificationController($conn);
+    $controller->markAsRead();
+    break;
+
+case 'markAllNotificationsAsRead':
+    require_once 'src/controllers/NotificationController.php';
+    $controller = new NotificationController($conn);
+    $controller->markAllAsRead();
+    break;
+
+// Notificaciones - Vista
+case 'showAllNotifications':
+    require_once 'src/controllers/NotificationController.php';
+    $controller = new NotificationController($conn);
+    $controller->showAllNotifications();
+    break;
+    
     // --- Gestión de Plantillas ---
     case 'manageTemplates':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
