@@ -16,7 +16,8 @@ require_once(__DIR__ . '/../Models/Accreditation.php');
 require_once(__DIR__ . '/../Models/CompletedProcess.php');
 require_once(__DIR__ . '/../Models/StudentDocument.php');
 require_once(__DIR__ . '/../Lib/Session.php');
-require_once(__DIR__ . '/../Lib/DocumentGenerator.php'); 
+require_once(__DIR__ . '/../Lib/DocumentGenerator.php');
+require_once(__DIR__ . '/NotificationController.php');
 
 class UpisController {
 
@@ -137,6 +138,12 @@ class UpisController {
         
         // Aprobar la empresa (cambia status de 'pending' a 'active')
         if ($userModel->approveUser($company_id)) {
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $notificationController->notifyEmpresaAprobada($company_id, $company_id);
+    
+    // ... código existente de email comentado ...
             
             // ========================================
             // OPCIONAL: ENVIAR NOTIFICACIÓN POR EMAIL
@@ -272,10 +279,12 @@ class UpisController {
             $emailService = new EmailService();
             $emailService->notifyCompanyRejection($company_data, $comments);
             
-            // ========================================
-            // PASO 4: ELIMINAR empresa de la base de datos
-            // ========================================
-            if ($userModel->deleteCompany($company_id)) {
+            // ✅ NOTIFICACIÓN
+require_once(__DIR__ . '/../../config.php');
+$notificationController = new NotificationController($conn);
+$notificationController->notifyEmpresaRechazada($company_id, $company_id, $comments);
+
+if ($userModel->deleteCompany($company_id)) {
                 $_SESSION['success'] = "✅ Empresa rechazada, notificada por email y guardada en historial. El email ahora está disponible para re-registro.";
             } else {
                 $_SESSION['error'] = "❌ Error al eliminar la empresa del sistema.";
@@ -317,8 +326,18 @@ class UpisController {
         $reviewer_id = $_SESSION['user_id'];
         
         if ($vacancyModel->approve($vacancy_id, $reviewer_id)) {
-            
-           $_SESSION['success'] = "✅ Vacante aprobada correctamente.";
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    require_once(__DIR__ . '/../Models/CompanyProfile.php');
+    $notificationController = new NotificationController($conn);
+    $companyProfileModel = new CompanyProfile();
+    $companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
+    if ($companyProfile) {
+        $companyUserId = $companyProfile['contact_person_user_id'];
+        $notificationController->notifyVacanteAprobada($companyUserId, $vacancy_id, $vacancy['title']);
+    }
+    
+    $_SESSION['success'] = "✅ Vacante aprobada correctamente.";
         } else {
             $_SESSION['error'] = "❌ Error al aprobar la vacante.";
         }
@@ -373,8 +392,20 @@ class UpisController {
             ];
             
             $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
-            
-            $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.";
+            $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
+
+// ✅ NOTIFICACIÓN
+require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/../Models/CompanyProfile.php');
+$notificationController = new NotificationController($conn);
+$companyProfileModel = new CompanyProfile();
+$companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
+if ($companyProfile) {
+    $companyUserId = $companyProfile['contact_person_user_id'];
+    $notificationController->notifyVacanteRechazada($companyUserId, $vacancy_id, $vacancy['title'], $rejection_notes);
+}
+
+$_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.";
         } else {
             $_SESSION['error'] = "Error al rechazar la vacante.";
         }
@@ -705,8 +736,12 @@ class UpisController {
         $reviewer_id = $_SESSION['user_id'];
         
         if ($accreditationModel->approve($submission_id, $reviewer_id, $comments)) {
-            
-            $_SESSION['success'] = "✅ Solicitud aprobada correctamente.";
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $notificationController->notifyAcreditacionAprobada($submission['student_user_id'], $submission_id);
+    
+    $_SESSION['success'] = "✅ Solicitud aprobada correctamente.";
         } else {
             $_SESSION['error'] = "❌ Error al aprobar la solicitud.";
         }
@@ -757,7 +792,12 @@ class UpisController {
         $reviewer_id = $_SESSION['user_id'];
         
         if ($accreditationModel->reject($submission_id, $reviewer_id, $comments)) {
-            $_SESSION['success'] = "❌ Solicitud rechazada correctamente.";
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $notificationController->notifyAcreditacionRechazada($submission['student_user_id'], $submission_id, $comments);
+    
+    $_SESSION['success'] = "❌ Solicitud rechazada correctamente.";
         } else {
             $_SESSION['error'] = "Error al rechazar la solicitud.";
         }
@@ -988,9 +1028,20 @@ class UpisController {
                 'company_name' => $vacancy['company_name']
             ];
             
-            $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
-            
-            $_SESSION['success'] = "⚠️ Vacante desactivada y empresa notificada.";
+           $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
+
+// ✅ NOTIFICACIÓN
+require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/../Models/CompanyProfile.php');
+$notificationController = new NotificationController($conn);
+$companyProfileModel = new CompanyProfile();
+$companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
+if ($companyProfile) {
+    $companyUserId = $companyProfile['contact_person_user_id'];
+    $notificationController->notifyVacanteRemovida($companyUserId, $vacancy_id, $vacancy['title'], $rejection_notes);
+}
+
+$_SESSION['success'] = "⚠️ Vacante desactivada y empresa notificada.";
         } else {
             $_SESSION['error'] = "❌ Error al desactivar la vacante.";
         }
@@ -1156,7 +1207,15 @@ public function approveSingleLetter() {
     
     // Aprobar carta individual
     if ($applicationModel->approveSingle($application_id, $reviewer_id, $comments)) {
-        $_SESSION['success'] = "✅ Carta de presentación aprobada correctamente.";
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $letter = $applicationModel->findById($application_id);
+    if ($letter) {
+        $notificationController->notifyCartaAprobada($letter['student_user_id'], $application_id);
+    }
+    
+    $_SESSION['success'] = "✅ Carta de presentación aprobada correctamente.";
     } else {
         $_SESSION['error'] = "❌ Error al aprobar la carta.";
     }
@@ -1191,11 +1250,15 @@ public function rejectSingleLetter() {
     
     // Rechazar carta individual
     if ($applicationModel->rejectSingle($application_id, $reviewer_id, $rejection_reason)) {
-        
-        // Opcional: Notificar al estudiante por email
-        // TODO: Implementar notificación
-        
-        $_SESSION['success'] = "❌ Carta rechazada. El estudiante será notificado.";
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $letter = $applicationModel->findById($application_id);
+    if ($letter) {
+        $notificationController->notifyCartaRechazada($letter['student_user_id'], $application_id, $rejection_reason);
+    }
+    
+    $_SESSION['success'] = "❌ Carta rechazada. El estudiante será notificado.";
     } else {
         $_SESSION['error'] = "Error al rechazar la carta.";
     }
@@ -1509,7 +1572,12 @@ if (count($parts) !== 2 || $parts[1] !== 'CP') {  // ✅ CORRECTO
                 
                 // ✅ MARCAR COMO COMPLETADA AUTOMÁTICAMENTE
                 if ($applicationModel->markAsCompleted($application['id'])) {
-                    $success_count++;
+    // ✅ NOTIFICACIÓN
+    require_once(__DIR__ . '/../../config.php');
+    $notificationController = new NotificationController($conn);
+    $notificationController->notifyCartaFirmadaDisponible($student_data['id'], $application['id']);
+    
+    $success_count++;
                 } else {
                     $error_count++;
                     $errors[] = "Error al marcar como completada: {$filename}";
