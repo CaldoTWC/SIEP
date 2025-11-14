@@ -230,19 +230,21 @@ class Vacancy {
      * @return array|false
      */
     public function getVacancyById($vacancy_id) {
-        $sql = "SELECT 
-                    v.*,
-                    cp.company_name, 
-                    cp.commercial_name,
-                    cp.website,
-                    cp.business_area,
-                    cp.company_type,
-                    cp.employee_count,
-                    u.email as company_email,
-                    u.phone_number as company_phone
-                FROM vacancies v
-                JOIN company_profiles cp ON v.company_profile_id = cp.id
-                JOIN users u ON cp.contact_person_user_id = u.id
+    $sql = "SELECT 
+                v.*,
+                cp.company_name, 
+                cp.commercial_name,
+                cp.website,
+                cp.business_area,
+                cp.company_type,
+                cp.employee_count,
+                cp.contact_person_user_id,
+                u.email as company_email,
+                u.phone_number as company_phone,
+                u.id as company_user_id
+            FROM vacancies v
+            JOIN company_profiles cp ON v.company_profile_id = cp.id
+            JOIN users u ON cp.contact_person_user_id = u.id
                 WHERE v.id = :vacancy_id
                 LIMIT 1";
         

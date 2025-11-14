@@ -332,15 +332,11 @@ if ($userModel->deleteCompany($company_id)) {
         
         if ($vacancyModel->approve($vacancy_id, $reviewer_id)) {
     // ✅ NOTIFICACIÓN
-    require_once(__DIR__ . '/../../config.php');
-    require_once(__DIR__ . '/../Models/CompanyProfile.php');
-    $notificationController = new NotificationController($this->conn);
-    $companyProfileModel = new CompanyProfile();
-    $companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
-    if ($companyProfile) {
-        $companyUserId = $companyProfile['contact_person_user_id'];
-        $notificationController->notifyVacanteAprobada($companyUserId, $vacancy_id, $vacancy['title']);
-    }
+    // ✅ NOTIFICACIÓN
+$notificationController = new NotificationController($this->conn);
+if (isset($vacancy['company_user_id'])) {
+    $notificationController->notifyVacanteAprobada($vacancy['company_user_id'], $vacancy_id, $vacancy['title']);
+}
     
     $_SESSION['success'] = "✅ Vacante aprobada correctamente.";
         } else {
@@ -387,33 +383,29 @@ if ($userModel->deleteCompany($company_id)) {
         // Llamar al método actualizado con los nuevos parámetros
         if ($vacancyModel->reject($vacancy_id, $reviewer_id, $rejection_reason, $rejection_notes)) {
             
-            // Enviar email con razón del rechazo
-            require_once(__DIR__ . '/../Services/EmailService.php');
-            $emailService = new EmailService();
-            
-            $company_data = [
-                'email' => $vacancy['company_email'],
-                'company_name' => $vacancy['company_name']
-            ];
-            
-            // ANTES (método que no existe):
-// $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
+          // Enviar email genérico
+require_once(__DIR__ . '/../Services/EmailService.php');
+$emailService = new EmailService();
 
-// DESPUÉS (usar método genérico):
+$company_data = [
+    'email' => $vacancy['company_email'],
+    'company_name' => $vacancy['company_name']
+];
+
+// Enviar notificación genérica por email
 $emailService->sendGenericNotification(
     $company_data['email'], 
     $company_data['company_name'], 
     'company'
 );
 
-// ✅ NOTIFICACIÓN
-require_once(__DIR__ . '/../../config.php');
-require_once(__DIR__ . '/../Models/CompanyProfile.php');
+// ✅ NOTIFICACIÓN EN SISTEMA
 $notificationController = new NotificationController($this->conn);
-$companyProfileModel = new CompanyProfile();
-$companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
+// Obtener el user_id desde el modelo Vacancy
+$userModel = new User();
+$companyProfile = $userModel->getCompanyProfileByUserId($vacancy['contact_person_user_id'] ?? 0);
 if ($companyProfile) {
-    $companyUserId = $companyProfile['contact_person_user_id'];
+    $companyUserId = $companyProfile['id'];
     $notificationController->notifyVacanteRechazada($companyUserId, $vacancy_id, $vacancy['title'], $rejection_notes);
 }
 
@@ -1031,34 +1023,26 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
         
         if ($vacancyModel->takedown($vacancy_id, $reviewer_id, $rejection_notes)) {
             
-            // Notificar a la empresa
-            require_once(__DIR__ . '/../Services/EmailService.php');
-            $emailService = new EmailService();
-            
-            $company_data = [
-                'email' => $vacancy['company_email'],
-                'company_name' => $vacancy['company_name']
-            ];
-            
-          // ANTES (método que no existe):
-// $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
+          // Notificar a la empresa
+require_once(__DIR__ . '/../Services/EmailService.php');
+$emailService = new EmailService();
 
-// DESPUÉS (usar método genérico):
+$company_data = [
+    'email' => $vacancy['company_email'],
+    'company_name' => $vacancy['company_name']
+];
+
+// Enviar notificación genérica por email
 $emailService->sendGenericNotification(
     $company_data['email'], 
     $company_data['company_name'], 
     'company'
 );
 
-// ✅ NOTIFICACIÓN
-require_once(__DIR__ . '/../../config.php');
-require_once(__DIR__ . '/../Models/CompanyProfile.php');
+// ✅ NOTIFICACIÓN EN SISTEMA
 $notificationController = new NotificationController($this->conn);
-$companyProfileModel = new CompanyProfile();
-$companyProfile = $companyProfileModel->getByVacancyId($vacancy_id);
-if ($companyProfile) {
-    $companyUserId = $companyProfile['contact_person_user_id'];
-    $notificationController->notifyVacanteRemovida($companyUserId, $vacancy_id, $vacancy['title'], $rejection_notes);
+if (isset($vacancy['company_user_id'])) {
+    $notificationController->notifyVacanteRemovida($vacancy['company_user_id'], $vacancy_id, $vacancy['title'], $rejection_notes);
 }
 
 $_SESSION['success'] = "⚠️ Vacante desactivada y empresa notificada.";
