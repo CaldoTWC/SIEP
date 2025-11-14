@@ -396,8 +396,15 @@ if ($userModel->deleteCompany($company_id)) {
                 'company_name' => $vacancy['company_name']
             ];
             
-            $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
-            $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
+            // ANTES (método que no existe):
+// $emailService->notifyVacancyRejected($vacancy, $company_data, $rejection_notes);
+
+// DESPUÉS (usar método genérico):
+$emailService->sendGenericNotification(
+    $company_data['email'], 
+    $company_data['company_name'], 
+    'company'
+);
 
 // ✅ NOTIFICACIÓN
 require_once(__DIR__ . '/../../config.php');
@@ -1033,7 +1040,15 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
                 'company_name' => $vacancy['company_name']
             ];
             
-           $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
+          // ANTES (método que no existe):
+// $emailService->notifyVacancyTakenDown($vacancy, $company_data, $rejection_notes);
+
+// DESPUÉS (usar método genérico):
+$emailService->sendGenericNotification(
+    $company_data['email'], 
+    $company_data['company_name'], 
+    'company'
+);
 
 // ✅ NOTIFICACIÓN
 require_once(__DIR__ . '/../../config.php');

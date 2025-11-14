@@ -108,7 +108,7 @@ public function showAllNotifications() {
     $notifications = $this->notification->getAllByUserId($userId);
 
     // Cargar vista
-    require_once __DIR__ . '/../../public/views/notifications/all_notifications.php';
+    require_once __DIR__ . '/../Views/notifications/all_notifications.php';
 }
 
     /**

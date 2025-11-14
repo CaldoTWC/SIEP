@@ -50,10 +50,11 @@ $session->guard(['company']);
         <p>Bienvenido, <?php echo htmlspecialchars($_SESSION['user_name']); ?>.</p>
         
         <div class="menu-buttons">
-            <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="btn">Publicar Nueva Vacante</a>
-            <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="btn" style="background-color: #007bff;">Generar Carta de Aceptación</a>
-            <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="btn" style="background-color: #28a745;">Generar Constancia de Validación</a>
-            <!-- ✅ BOTÓN DE NOTIFICACIONES -->
+    <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="btn">Publicar Nueva Vacante</a>
+    <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="btn" style="background-color: #007bff;">Generar Carta de Aceptación</a>
+    <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="btn" style="background-color: #28a745;">Generar Constancia de Validación</a>
+    
+    <!-- ✅ BOTÓN DE NOTIFICACIONES -->
     <a href="/SIEP/public/index.php?action=showAllNotifications" class="btn" style="background-color: #ff6b6b;">
         🔔 Mis Notificaciones
         <?php
@@ -68,7 +69,13 @@ $session->guard(['company']);
         }
         ?>
     </a>
-        </div>
+    
+    <!-- ✅ BOTÓN DE CAMBIAR CONTRASEÑA -->
+    <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn" style="background-color: #6c757d;">Cambiar Contraseña</a>
+    
+    <!-- ✅ BOTÓN DE CERRAR SESIÓN -->
+    <a href="/SIEP/public/index.php?action=logout" class="btn" style="background-color: #dc3545;">Cerrar Sesión</a>
+</div>
         
         <hr style="margin: 30px 0;">
         
