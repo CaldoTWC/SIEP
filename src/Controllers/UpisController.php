@@ -27,10 +27,10 @@ class UpisController {
     public function __construct() {
         $this->session = new Session();
         
-        // Obtener conexión a la base de datos
-        require_once(__DIR__ . '/../../config.php');
-        global $conn;
-        $this->conn = $conn;
+        // Obtener conexión usando el patrón Singleton de Database
+        require_once(__DIR__ . '/../Config/Database.php');
+        $database = Database::getInstance();
+        $this->conn = $database->getConnection();
     }
     
     // ========================================================================
@@ -286,7 +286,6 @@ class UpisController {
             $emailService->notifyCompanyRejection($company_data, $comments);
             
             // ✅ NOTIFICACIÓN
-require_once(__DIR__ . '/../../config.php');
 $notificationController = new NotificationController($this->conn);
 $notificationController->notifyEmpresaRechazada($company_id, $company_id, $comments);
 

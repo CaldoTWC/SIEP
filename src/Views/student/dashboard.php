@@ -57,6 +57,20 @@ $session->guard(['student']);
             <a href="/SIEP/public/index.php?action=showAccreditationForm" class="btn" style="background-color: var(--color-exito);">Subir Documentos de Acreditación Final</a>
             <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn btn-sm btn-outline-primary">🔐 Cambiar Contraseña</a>
             <a href="/SIEP/public/index.php?action=logout" class="btn" style="background-color: #5a6a7e;">Cerrar Sesión</a>
+             <a href="/SIEP/public/index.php?action=showAllNotifications" class="btn" style="background-color: #ff6b6b;">
+        🔔 Mis Notificaciones
+        <?php
+        // Mostrar contador de no leídas
+        require_once(__DIR__ . '/../../Models/Notification.php');
+        require_once(__DIR__ . '/../../Config/Database.php');
+        $database = Database::getInstance();
+        $notificationModel = new Notification($database->getConnection());
+        $unreadCount = $notificationModel->countUnread($_SESSION['user_id']);
+        if ($unreadCount > 0) {
+            echo '<span style="background: #fff; color: #ff6b6b; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: bold;">' . $unreadCount . '</span>';
+        }
+        ?>
+    </a>
         </div>
     </div>
 </body>

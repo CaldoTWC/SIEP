@@ -1,7 +1,9 @@
 <?php
 // Archivo: public/index.php
 // Sistema SIEP - UPIICSA
-// Actualización: 2025-10-29 - Sistema de gestión de ciclo de vida de vacantes
+// Actualización: 2025-11-13 - Sistema de notificaciones integrado
+
+
 date_default_timezone_set('America/Mexico_City');
 $action = $_GET['action'] ?? 'home';
 
@@ -373,37 +375,59 @@ switch ($action) {
         $upisController->downloadHistoryReport();
         break;
     
-    // Notificaciones - API
-case 'getNotificationsDropdown':
-    require_once 'src/controllers/NotificationController.php';
-    $controller = new NotificationController($conn);
-    $controller->getNotificationsDropdown();
-    break;
+    // ===================================================================
+    // --- RUTAS DE NOTIFICACIONES ---
+    // ===================================================================
+    
+    // API de Notificaciones
+    case 'getNotificationsDropdown':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->getNotificationsDropdown();
+        break;
 
-case 'getUnreadCount':
-    require_once 'src/controllers/NotificationController.php';
-    $controller = new NotificationController($conn);
-    $controller->getUnreadCount();
-    break;
+    case 'getUnreadCount':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->getUnreadCount();
+        break;
 
-case 'markNotificationAsRead':
-    require_once 'src/controllers/NotificationController.php';
-    $controller = new NotificationController($conn);
-    $controller->markAsRead();
-    break;
+    case 'markNotificationAsRead':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->markAsRead();
+        break;
 
-case 'markAllNotificationsAsRead':
-    require_once 'src/controllers/NotificationController.php';
-    $controller = new NotificationController($conn);
-    $controller->markAllAsRead();
-    break;
+    case 'markAllNotificationsAsRead':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->markAllAsRead();
+        break;
 
-// Notificaciones - Vista
-case 'showAllNotifications':
-    require_once 'src/controllers/NotificationController.php';
-    $controller = new NotificationController($conn);
-    $controller->showAllNotifications();
-    break;
+    // Vista de Notificaciones
+    case 'showAllNotifications':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->showAllNotifications();
+        break;
+
+    case 'deleteNotification':
+        require_once(__DIR__ . '/../src/Controllers/NotificationController.php');
+        require_once(__DIR__ . '/../src/Config/Database.php');
+        $database = Database::getInstance();
+        $notificationController = new NotificationController($database->getConnection());
+        $notificationController->deleteNotification();
+        break;
     
     // --- Gestión de Plantillas ---
     case 'manageTemplates':

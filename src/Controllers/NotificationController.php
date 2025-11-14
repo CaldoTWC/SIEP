@@ -89,17 +89,27 @@ class NotificationController {
     /**
      * Ver todas las notificaciones (página completa)
      */
-    public function showAllNotifications() {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?action=login');
-            return;
-        }
-
-        $userId = $_SESSION['user_id'];
-        $notifications = $this->notification->getAllByUserId($userId);
-
-        require_once __DIR__ . '/../../public/views/notifications/all_notifications.php';
+    /**
+ * Ver todas las notificaciones (página completa)
+ */
+public function showAllNotifications() {
+    // Iniciar sesión si no está iniciada
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
     }
+    
+    // Verificar autenticación
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: /SIEP/public/index.php?action=showLogin');
+        exit;
+    }
+
+    $userId = $_SESSION['user_id'];
+    $notifications = $this->notification->getAllByUserId($userId);
+
+    // Cargar vista
+    require_once __DIR__ . '/../../public/views/notifications/all_notifications.php';
+}
 
     /**
      * Eliminar una notificación
@@ -285,62 +295,29 @@ class NotificationController {
     // ============================================
 
     private function sendNotificationEmail($userId, $notificationTitle) {
-        // Obtener datos del usuario
-        $stmt = $this->db->prepare("SELECT email, first_name, last_name_p FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            return false;
-        }
-
-        $to = $user['email'];
-        $nombre = $user['first_name'] . ' ' . $user['last_name_p'];
-        $subject = 'Nueva notificación en SIEP';
-
-        // URL del sistema (ajusta según tu configuración)
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $systemUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . '/SIEP/public/index.php';
-
-        $message = "
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #6f1d1b; color: white; padding: 20px; text-align: center; }
-                .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
-                .button { display: inline-block; padding: 12px 30px; background-color: #6f1d1b; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            </style>
-        </head>
-        <body>
-            <div class='container'>
-                <div class='header'>
-                    <h2>Sistema Integral de Estancias Profesionales</h2>
-                </div>
-                <div class='content'>
-                    <p>Hola <strong>{$nombre}</strong>,</p>
-                    <p>Tienes una nueva notificación en el Sistema Integral de Estancias Profesionales (SIEP).</p>
-                    <p><strong>Asunto:</strong> {$notificationTitle}</p>
-                    <p>Ingresa al sistema para ver los detalles completos:</p>
-                    <center>
-                        <a href='{$systemUrl}' class='button'>Ir al Sistema</a>
-                    </center>
-                </div>
-                <div class='footer'>
-                    <p>Este es un correo automático, por favor no responder.</p>
-                    <p>Sistema Integral de Estancias Profesionales<br>ESCOM - IPN</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        ";
-
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= 'From: SIEP ESCOM <noreply@escom.ipn.mx>' . "\r\n";
-
-        return mail($to, $subject, $message, $headers);
+    // Obtener datos del usuario
+    $stmt = $this->db->prepare("SELECT email, first_name, last_name_p FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user) {
+        return false;
     }
+    
+    // ✅ USAR EL EmailService EXISTENTE
+    try {
+        require_once(__DIR__ . '/../Services/EmailService.php');
+        $emailService = new EmailService();
+        
+        $nombre = $user['first_name'] . ' ' . $user['last_name_p'];
+        $email = $user['email'];
+        
+        // Usar el método genérico que ya existe
+        return $emailService->sendGenericNotification($email, $nombre, 'general');
+        
+    } catch (Exception $e) {
+        error_log("❌ Error al enviar email de notificación: " . $e->getMessage());
+        return false;
+    }
+}
 }

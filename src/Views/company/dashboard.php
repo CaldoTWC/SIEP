@@ -53,6 +53,21 @@ $session->guard(['company']);
             <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="btn">Publicar Nueva Vacante</a>
             <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="btn" style="background-color: #007bff;">Generar Carta de Aceptación</a>
             <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="btn" style="background-color: #28a745;">Generar Constancia de Validación</a>
+            <!-- ✅ BOTÓN DE NOTIFICACIONES -->
+    <a href="/SIEP/public/index.php?action=showAllNotifications" class="btn" style="background-color: #ff6b6b;">
+        🔔 Mis Notificaciones
+        <?php
+        // Mostrar contador de no leídas
+        require_once(__DIR__ . '/../../Models/Notification.php');
+        require_once(__DIR__ . '/../../Config/Database.php');
+        $database = Database::getInstance();
+        $notificationModel = new Notification($database->getConnection());
+        $unreadCount = $notificationModel->countUnread($_SESSION['user_id']);
+        if ($unreadCount > 0) {
+            echo '<span style="background: #fff; color: #ff6b6b; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: bold;">' . $unreadCount . '</span>';
+        }
+        ?>
+    </a>
         </div>
         
         <hr style="margin: 30px 0;">
