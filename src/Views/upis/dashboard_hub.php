@@ -118,6 +118,18 @@ $session->guard(['upis', 'admin']);
                 <div class="counter">📈</div>
             </a>
 
+
+
+<a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
+    <div class="info">
+        <h3>✅ Acreditaciones</h3>
+        <p>Revisar y aprobar solicitudes de acreditación.</p>
+    </div>
+    <div class="counter">
+        <?php echo $pendingAccreditations ?? '0'; ?>
+    </div>
+</a>
+
             <!-- Revisar Acreditaciones -->
 <a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
     <div class="info">

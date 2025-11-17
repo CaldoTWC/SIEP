@@ -374,6 +374,14 @@ switch ($action) {
         $upisController = new UpisController();
         $upisController->downloadHistoryReport();
         break;
+
+    // En public/index.php, después del case 'reviewAccreditations':
+
+case 'viewApprovedAccreditations':
+    require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+    $upisController = new UpisController();
+    $upisController->viewApprovedAccreditations();
+    break;
     
     // ===================================================================
     // --- RUTAS DE NOTIFICACIONES ---
@@ -447,16 +455,19 @@ switch ($action) {
         break;
 
     // --- Gestión de Archivos ---
-    case 'downloadDocument':
-        require_once(__DIR__ . '/../src/Controllers/FileController.php');
-        $fileController = new FileController();
-        $fileController->downloadDocument();
-        break;
-    case 'viewDocument':
-        require_once(__DIR__ . '/../src/Controllers/FileController.php');
-        $fileController = new FileController();
-        $fileController->viewDocument();
-        break;
+    // Agregar después de las rutas de estudiante en public/index.php
+
+case 'viewDocument':
+    require_once(__DIR__ . '/../src/Controllers/FileController.php');
+    $fileController = new FileController();
+    $fileController->viewDocument();
+    break;
+
+case 'downloadDocument':
+    require_once(__DIR__ . '/../src/Controllers/FileController.php');
+    $fileController = new FileController();
+    $fileController->downloadDocument();
+    break;
 
     // ===================================================================
     // --- RUTAS GENÉRICAS ---

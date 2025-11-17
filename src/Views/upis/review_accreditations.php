@@ -268,6 +268,7 @@ $session->guard(['upis', 'admin']);
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
+            text-decoration: none;
         }
 
         .tab-button.active {
@@ -324,7 +325,8 @@ $session->guard(['upis', 'admin']);
         <?php else: ?>
             
             <?php foreach ($pendingAccreditations as $acc): 
-                $metadata = json_decode($acc['metadata'], true);
+                // ✅ DECODIFICAR METADATA (ya viene decodificado desde el controlador)
+                $metadata = $acc['metadata_decoded'] ?? json_decode($acc['metadata'], true);
                 $student_info = $metadata['student_info'] ?? [];
                 $company_info = $metadata['company_info'] ?? [];
                 $docs = $metadata['documents'] ?? [];
@@ -426,7 +428,7 @@ $session->guard(['upis', 'admin']);
                             <?php if (isset($docs['boleta_global'])): ?>
                                 <li>
                                     <span>📄 Boleta Global</span>
-                                    <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['boleta_global']); ?>" 
+                                    <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['boleta_global']); ?>" 
                                        target="_blank" 
                                        class="btn-download">
                                         👁️ Ver Documento
@@ -441,7 +443,7 @@ $session->guard(['upis', 'admin']);
                                     <?php foreach ($docs['recibos_nomina'] as $idx => $recibo): ?>
                                         <li>
                                             <span>💰 Recibo de Nómina #<?php echo $idx + 1; ?></span>
-                                            <a href="/SIEP/public/<?php echo str_replace('\\', '/', $recibo); ?>" 
+                                            <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($recibo); ?>" 
                                                target="_blank" 
                                                class="btn-download">
                                                 👁️ Ver Documento
@@ -453,7 +455,7 @@ $session->guard(['upis', 'admin']);
                                 <?php if (isset($docs['constancia_laboral'])): ?>
                                     <li>
                                         <span>📋 Constancia Laboral</span>
-                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['constancia_laboral']); ?>" 
+                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['constancia_laboral']); ?>" 
                                            target="_blank" 
                                            class="btn-download">
                                             👁️ Ver Documento
@@ -464,7 +466,7 @@ $session->guard(['upis', 'admin']);
                                 <?php if (isset($docs['reporte_final'])): ?>
                                     <li>
                                         <span>📝 Reporte Final</span>
-                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['reporte_final']); ?>" 
+                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['reporte_final']); ?>" 
                                            target="_blank" 
                                            class="btn-download">
                                             👁️ Ver Documento
@@ -478,7 +480,7 @@ $session->guard(['upis', 'admin']);
                                 <?php if (isset($docs['carta_aceptacion'])): ?>
                                     <li>
                                         <span>✉️ Carta de Aceptación</span>
-                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['carta_aceptacion']); ?>" 
+                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['carta_aceptacion']); ?>" 
                                            target="_blank" 
                                            class="btn-download">
                                             👁️ Ver Documento
@@ -489,7 +491,7 @@ $session->guard(['upis', 'admin']);
                                 <?php if (isset($docs['constancia_validacion'])): ?>
                                     <li>
                                         <span>✔️ Constancia de Validación</span>
-                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['constancia_validacion']); ?>" 
+                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['constancia_validacion']); ?>" 
                                            target="_blank" 
                                            class="btn-download">
                                             👁️ Ver Documento
@@ -500,7 +502,7 @@ $session->guard(['upis', 'admin']);
                                 <?php if (isset($docs['reporte_final'])): ?>
                                     <li>
                                         <span>📝 Reporte Final</span>
-                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['reporte_final']); ?>" 
+                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($docs['reporte_final']); ?>" 
                                            target="_blank" 
                                            class="btn-download">
                                             👁️ Ver Documento

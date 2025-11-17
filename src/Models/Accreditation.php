@@ -172,6 +172,9 @@ class Accreditation {
      * 
      * @return array
      */
+// En src/Models/Accreditation.php
+// REEMPLAZAR el método getPendingSubmissions() existente
+
 public function getPendingSubmissions() {
     $sql = "SELECT 
                 ac.*,
@@ -197,6 +200,9 @@ public function getPendingSubmissions() {
     
     return $results;
 }
+// En src/Models/Accreditation.php
+// Agregar después del método getPendingSubmissions()
+
 /**
  * Obtener todas las acreditaciones aprobadas con información completa
  * 
@@ -206,10 +212,13 @@ public function getApprovedSubmissions() {
     $sql = "SELECT 
                 ac.*,
                 u.first_name, u.last_name_p, u.last_name_m, u.email,
-                sp.boleta, sp.career
+                sp.boleta, sp.career,
+                upis.first_name as upis_first_name,
+                upis.last_name_p as upis_last_name_p
             FROM accreditation_submissions ac
             JOIN users u ON ac.student_user_id = u.id
             JOIN student_profiles sp ON u.id = sp.user_id
+            LEFT JOIN users upis ON ac.upis_reviewer_id = upis.id
             WHERE ac.status = 'approved'
             ORDER BY ac.reviewed_at DESC";
     
@@ -218,7 +227,7 @@ public function getApprovedSubmissions() {
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Decodificar metadata para cada resultado
+    // ✅ Decodificar metadata para cada resultado
     foreach ($results as &$result) {
         if (isset($result['metadata'])) {
             $result['metadata_decoded'] = json_decode($result['metadata'], true);

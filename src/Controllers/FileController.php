@@ -103,7 +103,7 @@ class FileController {
         exit;
     }
     
-    /**
+ /**
  * Ver documento en el navegador
  * Soporta tanto ID de documento como ruta directa
  */
@@ -114,7 +114,9 @@ public function viewDocument() {
         die('No autorizado. Debe iniciar sesión.');
     }
     
-    // OPCIÓN 1: Ver documento por ID (desde base de datos)
+    // ========================================
+    // OPCIÓN 1: Ver documento por ID (EXISTENTE - NO SE ROMPE)
+    // ========================================
     if (isset($_GET['id'])) {
         $document_id = (int)$_GET['id'];
         
@@ -148,7 +150,9 @@ public function viewDocument() {
         $this->displayFile($file_path);
     }
     
-    // OPCIÓN 2: Ver documento por ruta directa (para acreditaciones)
+    // ========================================
+    // OPCIÓN 2: Ver documento por ruta directa (MEJORADO)
+    // ========================================
     elseif (isset($_GET['path'])) {
         
         // Solo UPIS/Admin pueden ver archivos por ruta directa
@@ -162,33 +166,37 @@ public function viewDocument() {
         // ✅ NORMALIZAR BARRAS (Windows vs Linux)
         $file_path = str_replace('\\', '/', $file_path);
         
-        // Construir ruta absoluta
-        $base_path = __DIR__ . '/../../';
+        // ✅ Construir ruta absoluta desde el proyecto
+        $base_path = realpath(__DIR__ . '/../../') . '/';
         
-        // ✅ Intentar con realpath primero
-        $absolute_path = realpath($base_path . $file_path);
+        // ✅ Remover cualquier prefijo duplicado
+        $file_path = preg_replace('#^/+#', '', $file_path);
         
-        // ✅ Si realpath falla, construir manualmente
-        if (!$absolute_path) {
-            $absolute_path = $base_path . $file_path;
-            $absolute_path = str_replace('\\', '/', $absolute_path);
+        // ✅ Construir ruta completa
+        $absolute_path = $base_path . $file_path;
+        $absolute_path = str_replace('\\', '/', $absolute_path);
+        
+        // ✅ Intentar con realpath para resolver rutas relativas
+        $resolved_path = realpath($absolute_path);
+        if ($resolved_path) {
+            $absolute_path = $resolved_path;
         }
         
         // Validar que el archivo existe
         if (!file_exists($absolute_path)) {
-            // DEBUG: Mostrar rutas para ver qué está pasando
+            // DEBUG: Solo en desarrollo
             http_response_code(404);
-            echo '<h3>Archivo no encontrado</h3>';
+            echo '<h3>❌ Archivo no encontrado</h3>';
             echo '<p><strong>Ruta recibida:</strong> ' . htmlspecialchars($_GET['path']) . '</p>';
             echo '<p><strong>Ruta normalizada:</strong> ' . htmlspecialchars($file_path) . '</p>';
-            echo '<p><strong>Ruta absoluta construida:</strong> ' . htmlspecialchars($absolute_path) . '</p>';
             echo '<p><strong>Base path:</strong> ' . htmlspecialchars($base_path) . '</p>';
-            echo '<p><strong>¿Existe?:</strong> ' . (file_exists($absolute_path) ? 'SÍ' : 'NO') . '</p>';
+            echo '<p><strong>Ruta absoluta construida:</strong> ' . htmlspecialchars($absolute_path) . '</p>';
+            echo '<p><strong>¿Existe?:</strong> NO</p>';
             
-            // Listar archivos en el directorio
+            // Listar archivos en el directorio padre para debug
             $dir = dirname($absolute_path);
             if (is_dir($dir)) {
-                echo '<p><strong>Archivos en el directorio:</strong></p><ul>';
+                echo '<hr><p><strong>📂 Archivos en el directorio:</strong></p><ul>';
                 foreach (scandir($dir) as $file) {
                     if ($file !== '.' && $file !== '..') {
                         echo '<li>' . htmlspecialchars($file) . '</li>';
@@ -199,13 +207,16 @@ public function viewDocument() {
             die();
         }
         
-        // Servir archivo
+        // ✅ Servir el archivo
         $this->displayFile($absolute_path);
     }
     
+    // ========================================
+    // ERROR: No se proporcionó ni ID ni PATH
+    // ========================================
     else {
         http_response_code(400);
-        die('Debe proporcionar un ID de documento o una ruta de archivo.');
+        die('Se requiere un parámetro "id" o "path".');
     }
 }
     

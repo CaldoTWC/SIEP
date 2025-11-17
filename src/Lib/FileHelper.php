@@ -137,4 +137,53 @@ class FileHelper {
         
         return false;
     }
+
+    // Agregar al final de la clase FileHelper en src/Lib/FileHelper.php
+
+/**
+ * Verificar si un usuario puede acceder a un archivo
+ * 
+ * @param int $user_id ID del usuario
+ * @param string $role Rol del usuario
+ * @param string $file_path Ruta del archivo
+ * @param int $owner_id ID del dueño del archivo
+ * @return bool
+ */
+public static function userCanAccessFile($user_id, $role, $file_path, $owner_id) {
+    // UPIS y Admin pueden ver todo
+    if ($role === 'upis' || $role === 'admin') {
+        return true;
+    }
+    
+    // Estudiantes solo pueden ver sus propios archivos
+    if ($role === 'student' && $user_id === $owner_id) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Obtener ruta absoluta desde ruta relativa guardada en BD
+ * 
+ * @param string $relative_path
+ * @return string|false
+ */
+public static function getAbsolutePathFromDB($relative_path) {
+    // Normalizar barras
+    $relative_path = str_replace('\\', '/', $relative_path);
+    
+    // Si comienza con storage/students/
+    if (strpos($relative_path, 'storage/students/') === 0) {
+        $absolute = __DIR__ . '/../../' . $relative_path;
+        return realpath($absolute) ?: $absolute;
+    }
+    
+    // Si ya es una ruta completa
+    if (file_exists($relative_path)) {
+        return $relative_path;
+    }
+    
+    return false;
+}
 }

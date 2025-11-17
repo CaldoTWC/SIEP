@@ -170,12 +170,6 @@ public function submitDetailedLetterRequest() {
 }
 
 /**
- * Procesa la subida de documentos de acreditación
- */
-/**
- * Procesa la subida de documentos de acreditación (VERSIÓN COMPLETA)
- */
-/**
  * Procesa la subida de documentos de acreditación (VERSIÓN COMPLETA)
  */
 public function submitAccreditation() {
@@ -260,7 +254,8 @@ public function submitAccreditation() {
         $full_path = $upload_dir . '/' . $filename;
         
         if (move_uploaded_file($file['tmp_name'], $full_path)) {
-            $archivos_subidos['boleta_global'] = FileHelper::getRelativePath($full_path);
+            // ✅ NORMALIZAR RUTA: Convertir backslashes a forward slashes
+            $archivos_subidos['boleta_global'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
         }
     } else {
         header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=missing_boleta');
@@ -282,11 +277,11 @@ public function submitAccreditation() {
                     $full_path = $upload_dir . '/' . $filename;
                     
                     if (move_uploaded_file($_FILES['recibos_nomina']['tmp_name'][$i], $full_path)) {
-                        $recibos[] = FileHelper::getRelativePath($full_path);
+                        // ✅ NORMALIZAR RUTA
+                        $recibos[] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
                     }
                 }
             }
-            
             $archivos_subidos['recibos_nomina'] = $recibos;
         }
         
@@ -297,7 +292,8 @@ public function submitAccreditation() {
             $full_path = $upload_dir . '/' . $filename;
             
             if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                $archivos_subidos['constancia_laboral'] = FileHelper::getRelativePath($full_path);
+                // ✅ NORMALIZAR RUTA
+                $archivos_subidos['constancia_laboral'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
             }
         }
         
@@ -308,7 +304,8 @@ public function submitAccreditation() {
             $full_path = $upload_dir . '/' . $filename;
             
             if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                $archivos_subidos['reporte_final'] = FileHelper::getRelativePath($full_path);
+                // ✅ NORMALIZAR RUTA
+                $archivos_subidos['reporte_final'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
             }
         }
         
@@ -322,7 +319,8 @@ public function submitAccreditation() {
             $full_path = $upload_dir . '/' . $filename;
             
             if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                $archivos_subidos['carta_aceptacion'] = FileHelper::getRelativePath($full_path);
+                // ✅ NORMALIZAR RUTA
+                $archivos_subidos['carta_aceptacion'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
             }
         }
         
@@ -333,7 +331,8 @@ public function submitAccreditation() {
             $full_path = $upload_dir . '/' . $filename;
             
             if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                $archivos_subidos['constancia_validacion'] = FileHelper::getRelativePath($full_path);
+                // ✅ NORMALIZAR RUTA
+                $archivos_subidos['constancia_validacion'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
             }
         }
         
@@ -344,7 +343,8 @@ public function submitAccreditation() {
             $full_path = $upload_dir . '/' . $filename;
             
             if (move_uploaded_file($file['tmp_name'], $full_path)) {
-                $archivos_subidos['reporte_final'] = FileHelper::getRelativePath($full_path);
+                // ✅ NORMALIZAR RUTA
+                $archivos_subidos['reporte_final'] = str_replace('\\', '/', FileHelper::getRelativePath($full_path));
             }
         }
     }
@@ -380,37 +380,31 @@ public function submitAccreditation() {
     );
     
     if ($result) {
+
         // ========================================
         // 6. ENVIAR NOTIFICACIONES POR EMAIL
         // ========================================
+        /*
         require_once(__DIR__ . '/../Services/EmailService.php');
         $emailService = new EmailService();
         
         // Datos del estudiante
         $student_data = [
             'user_id' => $student_id,
-            'full_name' => $profile['first_name'] . ' ' . 
-                           $profile['last_name_p'] . ' ' . 
-                           $profile['last_name_m'],
-            'boleta' => $boleta,
-            'career' => $programa,
-            'email' => $profile['email']
-        ];
-        
-        // Datos de la acreditación
-        $submission_data = [
-            'id' => $accreditationModel->getLastInsertId(),
-            'tipo' => $tipo_acreditacion,
-            'empresa_nombre' => $empresa,
-            'fecha_inicio' => $fecha_inicio,
-            'fecha_fin' => $fecha_fin,
-            'created_at' => date('Y-m-d H:i:s'),
-            'review_url' => getenv('SITE_URL') . '/index.php?action=reviewAccreditation&id=' . $accreditationModel->getLastInsertId()
+            'email' => $profile['email'],
+            'first_name' => $profile['first_name'],
+            'last_name_p' => $profile['last_name_p'],
+            'boleta' => $boleta
         ];
         
         // Enviar confirmación al estudiante
-        $emailService->notifyStudentAccreditationReceived($student_data, $submission_data);
+        $emailService->sendAccreditationConfirmation($student_data, $tipo_acreditacion);
         
+        // Notificar a UPIS
+        $emailService->notifyUpisNewAccreditation($student_data, $tipo_acreditacion);
+        
+        // Redirigir con éxito
+        */
         header('Location: /SIEP/public/index.php?action=studentDashboard&status=accreditation_sent&tipo=' . $tipo_acreditacion);
     } else {
         header('Location: /SIEP/public/index.php?action=showAccreditationForm&status=upload_error');

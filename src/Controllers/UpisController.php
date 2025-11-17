@@ -988,6 +988,22 @@ $_SESSION['success'] = "❌ Vacante rechazada y notificación enviada por email.
         
         require_once(__DIR__ . '/../Views/upis/manage_active_vacancies.php');
     }
+
+    // En src/Controllers/UpisController.php
+// Agregar después del método reviewAccreditations()
+
+/**
+ * Vista de acreditaciones aprobadas
+ */
+public function viewApprovedAccreditations() {
+    $this->session->guard(['upis', 'admin']);
+    
+    require_once(__DIR__ . '/../Models/Accreditation.php');
+    $accreditationModel = new Accreditation();
+    $approvedAccreditations = $accreditationModel->getApprovedSubmissions();
+    
+    require_once(__DIR__ . '/../Views/upis/view_approved_accreditations.php');
+}
     
     /**
      * Tumbar una vacante activa (solo UPIS)
