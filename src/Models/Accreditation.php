@@ -172,34 +172,61 @@ class Accreditation {
      * 
      * @return array
      */
-    public function getPendingSubmissions() {
-        $sql = "SELECT 
-                    ac.id, ac.student_user_id, ac.boleta, ac.programa_academico, ac.empresa_nombre,
-                    ac.tipo_acreditacion, ac.fecha_inicio, ac.fecha_fin,
-                    ac.final_report_path, ac.validation_letter_path, 
-                    ac.metadata, ac.submitted_at, ac.status,
-                    u.first_name, u.last_name_p, u.last_name_m, u.email,
-                    sp.boleta as student_boleta, sp.career
-                FROM accreditation_submissions ac
-                JOIN users u ON ac.student_user_id = u.id
-                JOIN student_profiles sp ON u.id = sp.user_id
-                WHERE ac.status = 'pending'
-                ORDER BY ac.submitted_at ASC";
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Decodificar metadata para cada resultado
-        foreach ($results as &$result) {
-            if (isset($result['metadata'])) {
-                $result['metadata_decoded'] = json_decode($result['metadata'], true);
-            }
+public function getPendingSubmissions() {
+    $sql = "SELECT 
+                ac.*,
+                u.first_name, u.last_name_p, u.last_name_m, u.email,
+                sp.boleta, sp.career
+            FROM accreditation_submissions ac
+            JOIN users u ON ac.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE ac.status = 'pending'
+            ORDER BY ac.submitted_at DESC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // ✅ AGREGAR: Decodificar metadata para cada resultado
+    foreach ($results as &$result) {
+        if (isset($result['metadata'])) {
+            $result['metadata_decoded'] = json_decode($result['metadata'], true);
         }
-        
-        return $results;
     }
+    
+    return $results;
+}
+/**
+ * Obtener todas las acreditaciones aprobadas con información completa
+ * 
+ * @return array
+ */
+public function getApprovedSubmissions() {
+    $sql = "SELECT 
+                ac.*,
+                u.first_name, u.last_name_p, u.last_name_m, u.email,
+                sp.boleta, sp.career
+            FROM accreditation_submissions ac
+            JOIN users u ON ac.student_user_id = u.id
+            JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE ac.status = 'approved'
+            ORDER BY ac.reviewed_at DESC";
+    
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Decodificar metadata para cada resultado
+    foreach ($results as &$result) {
+        if (isset($result['metadata'])) {
+            $result['metadata_decoded'] = json_decode($result['metadata'], true);
+        }
+    }
+    
+    return $results;
+}
     
     /**
      * Actualizar estado de acreditación (método legacy)

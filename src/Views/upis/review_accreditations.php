@@ -1,5 +1,7 @@
 <?php
 // Archivo: src/Views/upis/review_accreditations.php
+// Vista de Revisión de Acreditaciones para UPIS
+
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
 $session->guard(['upis', 'admin']);
@@ -9,283 +11,297 @@ $session->guard(['upis', 'admin']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revisar Acreditaciones - SIEP UPIS</title>
+    <title>Revisar Acreditaciones - UPIS</title>
     <link rel="stylesheet" href="/SIEP/public/css/styles.css">
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
 
-        .page-header {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        h1 {
+            text-align: center;
             color: white;
-            padding: 30px;
-            border-radius: 10px;
             margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            border-left: 4px solid #27ae60;
-            padding: 20px;
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: white;
+            color: #667eea;
+            text-decoration: none;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .stat-card h3 {
-            margin: 0 0 10px 0;
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-        }
-
-        .stat-card .number {
-            font-size: 32px;
             font-weight: bold;
-            color: #27ae60;
+            transition: transform 0.2s;
+        }
+
+        .back-link:hover {
+            transform: translateX(-5px);
         }
 
         .accreditation-card {
             background: white;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-        }
-
-        .accreditation-card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
         }
 
         .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
             padding-bottom: 15px;
-            border-bottom: 2px solid #ecf0f1;
-        }
-
-        .card-header h3 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 20px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .badge-type-a {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .badge-type-b {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
             margin-bottom: 20px;
+        }
+
+        .card-header h2 {
+            color: #667eea;
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .status-tipo-a {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .status-tipo-b {
+            background-color: #4ecdc4;
+            color: white;
         }
 
         .info-section {
-            background: #f8f9fa;
+            margin: 20px 0;
             padding: 15px;
+            background-color: #f8f9fa;
             border-radius: 8px;
+            border-left: 4px solid #667eea;
         }
 
-        .info-section h4 {
-            margin: 0 0 12px 0;
-            color: #27ae60;
-            font-size: 14px;
-            text-transform: uppercase;
+        .info-section h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.3em;
         }
 
-        .info-row {
-            display: flex;
-            margin-bottom: 8px;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #666;
-            min-width: 120px;
-        }
-
-        .info-value {
+        .info-section p {
+            margin: 8px 0;
             color: #333;
         }
 
-        .documents-list {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .info-section strong {
+            color: #555;
         }
 
-        .document-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .document-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .document-list li {
+            margin: 10px 0;
             padding: 10px;
-            background: white;
+            background-color: white;
             border-radius: 5px;
-            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-download {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-download:hover {
+            background-color: #0056b3;
         }
 
         .action-section {
             display: flex;
-            gap: 15px;
-            align-items: flex-start;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
+            gap: 20px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
         }
 
         .form-group {
-            flex: 1;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
         }
 
-        textarea {
+        .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
-            font-family: Arial, sans-serif;
             resize: vertical;
             min-height: 80px;
-        }
-
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            font-family: inherit;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
             transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
         }
 
         .btn-success {
-            background: #27ae60;
+            background-color: #28a745;
             color: white;
         }
 
         .btn-success:hover {
-            background: #229954;
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .btn-danger {
-            background: #e74c3c;
+            background-color: #dc3545;
             color: white;
         }
 
         .btn-danger:hover {
-            background: #c0392b;
-        }
-
-        .btn-secondary {
-            background: #95a5a6;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .alert {
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+            font-weight: bold;
         }
 
         .alert-success {
-            background: #d4edda;
+            background-color: #d4edda;
             color: #155724;
-            border-left: 4px solid #28a745;
+            border: 1px solid #c3e6cb;
         }
 
         .alert-error {
-            background: #f8d7da;
+            background-color: #f8d7da;
             color: #721c24;
-            border-left: 4px solid #dc3545;
+            border: 1px solid #f5c6cb;
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
         }
 
-        .empty-state .icon {
-            font-size: 64px;
+        .empty-state h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
             margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background-color: white;
+            color: #667eea;
+            border: 2px solid white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="/SIEP/public/index.php?action=upisDashboard" class="back-link">← Volver al Dashboard</a>
         
-        <a href="/SIEP/public/index.php?action=upisDashboard" class="btn btn-secondary" style="margin-bottom: 20px;">
-            ← Volver al Dashboard
-        </a>
+        <h1>✅ Revisión de Acreditaciones</h1>
 
-        <div class="page-header">
-            <h1>📋 Revisar Solicitudes de Acreditación</h1>
-            <p>Gestiona las solicitudes de acreditación de estancia profesional enviadas por los estudiantes</p>
+        <!-- Tabs para cambiar entre pendientes y aprobadas -->
+        <div class="tabs">
+            <a href="/SIEP/public/index.php?action=reviewAccreditations" 
+               class="tab-button active">
+                📋 Pendientes
+            </a>
+            <a href="/SIEP/public/index.php?action=viewApprovedAccreditations" 
+               class="tab-button">
+                ✅ Aprobadas
+            </a>
         </div>
 
         <?php if (isset($_SESSION['success'])): ?>
             <div class="alert alert-success">
                 <?php 
-                echo htmlspecialchars($_SESSION['success']); 
+                echo $_SESSION['success']; 
                 unset($_SESSION['success']);
                 ?>
             </div>
@@ -294,193 +310,214 @@ $session->guard(['upis', 'admin']);
         <?php if (isset($_SESSION['error'])): ?>
             <div class="alert alert-error">
                 <?php 
-                echo htmlspecialchars($_SESSION['error']); 
+                echo $_SESSION['error']; 
                 unset($_SESSION['error']);
                 ?>
             </div>
         <?php endif; ?>
 
-        <!-- Estadísticas -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Total Pendientes</h3>
-                <div class="number"><?php echo count($pendingAccreditations); ?></div>
-            </div>
-            <div class="stat-card">
-                <h3>Tipo A (No Registrada)</h3>
-                <div class="number">
-                    <?php 
-                    echo count(array_filter($pendingAccreditations, function($acc) {
-                        return $acc['tipo_acreditacion'] === 'A';
-                    }));
-                    ?>
-                </div>
-            </div>
-            <div class="stat-card">
-                <h3>Tipo B (Registrada)</h3>
-                <div class="number">
-                    <?php 
-                    echo count(array_filter($pendingAccreditations, function($acc) {
-                        return $acc['tipo_acreditacion'] === 'B';
-                    }));
-                    ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lista de Acreditaciones -->
         <?php if (empty($pendingAccreditations)): ?>
             <div class="empty-state">
-                <div class="icon">✅</div>
-                <h3>No hay solicitudes pendientes</h3>
-                <p>Todas las acreditaciones han sido revisadas.</p>
+                <h2>📭 No hay acreditaciones pendientes</h2>
+                <p>Todas las solicitudes han sido procesadas.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($pendingAccreditations as $acc): ?>
-                <?php 
-                // Decodificar metadata
-                $metadata = [];
-                if (!empty($acc['metadata'])) {
-                    $metadata = json_decode($acc['metadata'], true) ?? [];
-                }
-                ?>
+            
+            <?php foreach ($pendingAccreditations as $acc): 
+                $metadata = json_decode($acc['metadata'], true);
+                $student_info = $metadata['student_info'] ?? [];
+                $company_info = $metadata['company_info'] ?? [];
+                $docs = $metadata['documents'] ?? [];
+                $tipo = $acc['tipo_acreditacion'];
+            ?>
                 
                 <div class="accreditation-card">
                     
-                    <!-- Header -->
+                    <!-- Encabezado -->
                     <div class="card-header">
-                        <div>
-                            <h3>Solicitud #<?php echo $acc['id']; ?> - <?php echo htmlspecialchars($acc['boleta']); ?></h3>
-                            <p style="margin: 5px 0 0 0; color: #666;">
-                                Enviada el <?php echo date('d/m/Y H:i', strtotime($acc['submitted_at'])); ?>
-                            </p>
-                        </div>
-                        <div>
-                            <span class="badge <?php echo $acc['tipo_acreditacion'] === 'A' ? 'badge-type-a' : 'badge-type-b'; ?>">
-                                Tipo <?php echo $acc['tipo_acreditacion']; ?> - 
-                                <?php echo $acc['tipo_acreditacion'] === 'A' ? 'Empresa NO registrada' : 'Empresa registrada'; ?>
+                        <h2>
+                            👤 <?php echo htmlspecialchars($acc['first_name'] . ' ' . $acc['last_name_p'] . ' ' . $acc['last_name_m']); ?>
+                            <span class="status-badge status-pending">⏳ Pendiente</span>
+                            <span class="status-badge <?php echo $tipo === 'A' ? 'status-tipo-a' : 'status-tipo-b'; ?>">
+                                Tipo <?php echo $tipo; ?>
                             </span>
+                        </h2>
+                        <p style="margin: 5px 0 0 0; color: #666;">
+                            📅 Enviado: <?php echo date('d/m/Y H:i', strtotime($acc['submitted_at'])); ?>
+                        </p>
+                    </div>
+
+                    <!-- Información del Estudiante -->
+                    <div class="info-section">
+                        <h3>📚 Información del Estudiante</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Boleta:</strong> <?php echo htmlspecialchars($acc['boleta']); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Carrera:</strong> <?php echo htmlspecialchars($acc['programa_academico']); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Email:</strong> <?php echo htmlspecialchars($student_info['email_institucional'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Teléfono:</strong> <?php echo htmlspecialchars($student_info['telefono'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Semestre:</strong> <?php echo htmlspecialchars($student_info['semestre'] ?? 'N/A'); ?>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Información -->
-                    <div class="info-grid">
+                    <!-- Información de la Empresa -->
+                    <div class="info-section">
+                        <h3>🏢 Información de la Empresa</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Nombre Comercial:</strong> <?php echo htmlspecialchars($acc['empresa_nombre']); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Razón Social:</strong> <?php echo htmlspecialchars($company_info['razon_social'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Tipo:</strong> <?php echo htmlspecialchars($company_info['tipo_empresa'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Giro:</strong> <?php echo htmlspecialchars($company_info['giro'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Contacto:</strong> <?php echo htmlspecialchars($company_info['nombre_contacto'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Email:</strong> <?php echo htmlspecialchars($company_info['email_contacto'] ?? 'N/A'); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Teléfono:</strong> <?php echo htmlspecialchars($company_info['telefono_contacto'] ?? 'N/A'); ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Periodo de Estancia -->
+                    <div class="info-section">
+                        <h3>📅 Periodo de Estancia</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Fecha Inicio:</strong> <?php echo date('d/m/Y', strtotime($acc['fecha_inicio'])); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Fecha Fin:</strong> <?php echo date('d/m/Y', strtotime($acc['fecha_fin'])); ?>
+                            </div>
+                            <div class="info-item">
+                                <strong>Días de Estancia:</strong> 
+                                <?php 
+                                $dias = $company_info['dias_estancia'] ?? [];
+                                echo is_array($dias) ? implode(', ', $dias) : 'N/A';
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentos Subidos -->
+                    <div class="info-section">
+                        <h3>📎 Documentos Subidos</h3>
                         
-                        <!-- Estudiante -->
-                        <div class="info-section">
-                            <h4>👤 Estudiante</h4>
-                            <div class="info-row">
-                                <div class="info-label">Nombre:</div>
-                                <div class="info-value">
-                                    <?php echo htmlspecialchars($acc['first_name'] . ' ' . 
-                                                               $acc['last_name_p'] . ' ' . 
-                                                               $acc['last_name_m']); ?>
-                                </div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Email:</div>
-                                <div class="info-value"><?php echo htmlspecialchars($acc['email']); ?></div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Carrera:</div>
-                                <div class="info-value"><?php echo htmlspecialchars($acc['career']); ?></div>
-                            </div>
-                        </div>
-
-                        <!-- Empresa -->
-                        <div class="info-section">
-                            <h4>🏢 Empresa</h4>
-                            <div class="info-row">
-                                <div class="info-label">Nombre:</div>
-                                <div class="info-value"><?php echo htmlspecialchars($acc['empresa_nombre'] ?? 'N/A'); ?></div>
-                            </div>
-                            <?php if (isset($metadata['company_info'])): ?>
-                                <div class="info-row">
-                                    <div class="info-label">Contacto:</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($metadata['company_info']['nombre_contacto'] ?? 'N/A'); ?></div>
-                                </div>
-                                <div class="info-row">
-                                    <div class="info-label">Email:</div>
-                                    <div class="info-value"><?php echo htmlspecialchars($metadata['company_info']['email_contacto'] ?? 'N/A'); ?></div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- Periodo -->
-                        <div class="info-section">
-                            <h4>📅 Periodo de Estancia</h4>
-                            <div class="info-row">
-                                <div class="info-label">Inicio:</div>
-                                <div class="info-value">
-                                    <?php echo $acc['fecha_inicio'] ? date('d/m/Y', strtotime($acc['fecha_inicio'])) : 'N/A'; ?>
-                                </div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Fin:</div>
-                                <div class="info-value">
-                                    <?php echo $acc['fecha_fin'] ? date('d/m/Y', strtotime($acc['fecha_fin'])) : 'N/A'; ?>
-                                </div>
-                            </div>
-                            <?php if ($acc['fecha_inicio'] && $acc['fecha_fin']): ?>
-                                <div class="info-row">
-                                    <div class="info-label">Duración:</div>
-                                    <div class="info-value">
-                                        <?php 
-                                        $inicio = new DateTime($acc['fecha_inicio']);
-                                        $fin = new DateTime($acc['fecha_fin']);
-                                        echo $inicio->diff($fin)->days . ' días';
-                                        ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
-                    </div>
-
-                    <!-- Documentos -->
-                    <?php if (isset($metadata['documents']) && !empty(array_filter($metadata['documents']))): ?>
-                        <div class="documents-list">
-                            <h4 style="margin: 0 0 12px 0; color: #27ae60;">📎 Documentos Adjuntos</h4>
-                            
-                            <?php if (!empty($metadata['documents']['boleta_global'])): ?>
-                                <div class="document-item">
-                                    <span>📄 Boleta Global de Calificaciones</span>
-                                    <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($metadata['documents']['boleta_global']); ?>" 
-                                       class="btn btn-secondary btn-sm" target="_blank">
-                                        Ver
+                        <ul class="document-list">
+                            <!-- Boleta Global (común para ambos tipos) -->
+                            <?php if (isset($docs['boleta_global'])): ?>
+                                <li>
+                                    <span>📄 Boleta Global</span>
+                                    <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['boleta_global']); ?>" 
+                                       target="_blank" 
+                                       class="btn-download">
+                                        👁️ Ver Documento
                                     </a>
-                                </div>
+                                </li>
                             <?php endif; ?>
 
-                            <?php if (!empty($metadata['documents']['constancia_laboral'])): ?>
-                                <div class="document-item">
-                                    <span>📄 Constancia Laboral / Carta de Validación</span>
-                                    <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($metadata['documents']['constancia_laboral']); ?>" 
-                                       class="btn btn-secondary btn-sm" target="_blank">
-                                        Ver
-                                    </a>
-                                </div>
-                            <?php endif; ?>
+                            <?php if ($tipo === 'A'): ?>
+                                <!-- Tipo A: Empresa NO Registrada -->
+                                
+                                <?php if (isset($docs['recibos_nomina']) && is_array($docs['recibos_nomina'])): ?>
+                                    <?php foreach ($docs['recibos_nomina'] as $idx => $recibo): ?>
+                                        <li>
+                                            <span>💰 Recibo de Nómina #<?php echo $idx + 1; ?></span>
+                                            <a href="/SIEP/public/<?php echo str_replace('\\', '/', $recibo); ?>" 
+                                               target="_blank" 
+                                               class="btn-download">
+                                                👁️ Ver Documento
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
 
-                            <?php if (!empty($metadata['documents']['recibos_nomina'])): ?>
-                                <?php foreach ($metadata['documents']['recibos_nomina'] as $index => $recibo): ?>
-                                    <div class="document-item">
-                                        <span>💰 Recibo de Nómina #<?php echo $index + 1; ?></span>
-                                        <a href="/SIEP/public/index.php?action=viewDocument&path=<?php echo urlencode($recibo); ?>" 
-                                           class="btn btn-secondary btn-sm" target="_blank">
-                                            Ver
+                                <?php if (isset($docs['constancia_laboral'])): ?>
+                                    <li>
+                                        <span>📋 Constancia Laboral</span>
+                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['constancia_laboral']); ?>" 
+                                           target="_blank" 
+                                           class="btn-download">
+                                            👁️ Ver Documento
                                         </a>
-                                    </div>
-                                <?php endforeach; ?>
+                                    </li>
+                                <?php endif; ?>
+
+                                <?php if (isset($docs['reporte_final'])): ?>
+                                    <li>
+                                        <span>📝 Reporte Final</span>
+                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['reporte_final']); ?>" 
+                                           target="_blank" 
+                                           class="btn-download">
+                                            👁️ Ver Documento
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
+                            <?php else: ?>
+                                <!-- Tipo B: Empresa Registrada -->
+                                
+                                <?php if (isset($docs['carta_aceptacion'])): ?>
+                                    <li>
+                                        <span>✉️ Carta de Aceptación</span>
+                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['carta_aceptacion']); ?>" 
+                                           target="_blank" 
+                                           class="btn-download">
+                                            👁️ Ver Documento
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
+                                <?php if (isset($docs['constancia_validacion'])): ?>
+                                    <li>
+                                        <span>✔️ Constancia de Validación</span>
+                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['constancia_validacion']); ?>" 
+                                           target="_blank" 
+                                           class="btn-download">
+                                            👁️ Ver Documento
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
+                                <?php if (isset($docs['reporte_final'])): ?>
+                                    <li>
+                                        <span>📝 Reporte Final</span>
+                                        <a href="/SIEP/public/<?php echo str_replace('\\', '/', $docs['reporte_final']); ?>" 
+                                           target="_blank" 
+                                           class="btn-download">
+                                            👁️ Ver Documento
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+
                             <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
+                        </ul>
+                    </div>
 
                     <!-- Acciones -->
                     <div class="action-section">
                         
                         <!-- Formulario de Aprobación -->
-                        <form method="POST" action="/SIEP/public/index.php?action=approveAccreditation" 
+                        <form method="POST" 
+                              action="/SIEP/public/index.php?action=approveAccreditation" 
                               onsubmit="return confirm('¿Aprobar esta acreditación?');"
                               style="flex: 1;">
                             <input type="hidden" name="submission_id" value="<?php echo $acc['id']; ?>">
@@ -489,12 +526,13 @@ $session->guard(['upis', 'admin']);
                                 <textarea name="comments" placeholder="Puedes agregar comentarios..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-success" style="width: 100%;">
-                                ✅ Aprobar
+                                ✅ Aprobar Acreditación
                             </button>
                         </form>
 
                         <!-- Formulario de Rechazo -->
-                        <form method="POST" action="/SIEP/public/index.php?action=rejectAccreditation" 
+                        <form method="POST" 
+                              action="/SIEP/public/index.php?action=rejectAccreditation" 
                               onsubmit="return confirm('¿Rechazar esta acreditación? Esta acción no se puede deshacer.');"
                               style="flex: 1;">
                             <input type="hidden" name="submission_id" value="<?php echo $acc['id']; ?>">
@@ -503,7 +541,7 @@ $session->guard(['upis', 'admin']);
                                 <textarea name="comments" required placeholder="Explica por qué se rechaza..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-danger" style="width: 100%;">
-                                ❌ Rechazar
+                                ❌ Rechazar Acreditación
                             </button>
                         </form>
 
