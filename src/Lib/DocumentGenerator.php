@@ -338,6 +338,7 @@ public function generatePresentationLetter(array $student_data, $letter_number =
 
         /**
      * Genera el expediente completo de acreditación en PDF
+     * Historial completo del estudiante para archivo de UPIS
      * 
      * @param array $accreditation - Datos de la acreditación
      * @param array $metadata - Metadata con información del estudiante y empresa
@@ -352,11 +353,14 @@ public function generatePresentationLetter(array $student_data, $letter_number =
         
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8');
         
-        // Configuración del documento
+        // ✅ CONFIGURACIÓN CORRECTA PARA UTF-8
         $pdf->SetCreator('SIEP - IPN UPIICSA');
         $pdf->SetAuthor('Unidad Politécnica de Integración Social');
         $pdf->SetTitle('Expediente de Acreditación - ' . $accreditation['boleta']);
-        $pdf->SetSubject('Acreditación Aprobada');
+        $pdf->SetSubject('Historial de Estancia Profesional');
+        
+        // ✅ Establecer fuente con soporte UTF-8
+        $pdf->SetFont('dejavusans', '', 10, '', true);
         
         // Remover header/footer por defecto
         $pdf->setPrintHeader(false);
@@ -370,113 +374,209 @@ public function generatePresentationLetter(array $student_data, $letter_number =
         $company_info = $metadata['company_info'] ?? [];
         $tipo = $accreditation['tipo_acreditacion'];
         
-        // --- ENCABEZADO ---
-        $pdf->SetFont('helvetica', 'B', 20);
+        // ========================================
+        // ENCABEZADO PRINCIPAL
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 22);
         $pdf->SetTextColor(0, 74, 153);
-        $pdf->Cell(0, 10, utf8_decode('📋 EXPEDIENTE DE ACREDITACIÓN'), 0, 1, 'C');
+        $pdf->Cell(0, 12, 'EXPEDIENTE DE ESTANCIA PROFESIONAL', 0, 1, 'C');
         $pdf->Ln(2);
         
-        // Estado
-        $pdf->SetFont('helvetica', 'B', 12);
+        // Estado de aprobación
+        $pdf->SetFont('dejavusans', 'B', 12);
         $pdf->SetFillColor(40, 167, 69);
         $pdf->SetTextColor(255, 255, 255);
-        $pdf->Cell(0, 8, utf8_decode('✅ APROBADO'), 0, 1, 'C', true);
-        $pdf->Ln(5);
+        $pdf->Cell(0, 8, 'APROBADO', 0, 1, 'C', true);
+        $pdf->Ln(8);
         
-        // --- SECCIÓN 1: INFORMACIÓN DEL ESTUDIANTE ---
-        $pdf->SetFont('helvetica', 'B', 14);
+        // ========================================
+        // SECCIÓN 1: INFORMACIÓN DEL ESTUDIANTE
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
         $pdf->SetTextColor(17, 153, 142);
-        $pdf->Cell(0, 8, utf8_decode('👤 INFORMACIÓN DEL ESTUDIANTE'), 0, 1, 'L');
-        $pdf->SetLineWidth(0.5);
-        $pdf->SetDrawColor(17, 153, 142);
-        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Cell(0, 8, 'INFORMACIÓN DEL ESTUDIANTE', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
         $pdf->Ln(3);
         
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('dejavusans', '', 10);
         $pdf->SetTextColor(0, 0, 0);
         
         $this->addLabelValue($pdf, 'Boleta:', $accreditation['boleta']);
-        $this->addLabelValue($pdf, 'Nombre:', $accreditation['first_name'] . ' ' . $accreditation['last_name_p'] . ' ' . $accreditation['last_name_m']);
+        $this->addLabelValue($pdf, 'Nombre Completo:', $accreditation['first_name'] . ' ' . $accreditation['last_name_p'] . ' ' . $accreditation['last_name_m']);
         $this->addLabelValue($pdf, 'Carrera:', $accreditation['career']);
-        $this->addLabelValue($pdf, 'Email:', $student_info['email_institucional'] ?? 'N/A');
-        $this->addLabelValue($pdf, utf8_decode('Teléfono:'), $student_info['telefono'] ?? 'N/A');
-        $this->addLabelValue($pdf, 'Semestre:', ($student_info['semestre'] ?? 'N/A') . utf8_decode('°'));
+        $this->addLabelValue($pdf, 'Email Institucional:', $student_info['email_institucional'] ?? $accreditation['email']);
+        $this->addLabelValue($pdf, 'Teléfono:', $student_info['telefono'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Semestre Cursado:', ($student_info['semestre'] ?? 'N/A') . '°');
         $pdf->Ln(5);
         
-        // --- SECCIÓN 2: INFORMACIÓN DE LA EMPRESA ---
-        $pdf->SetFont('helvetica', 'B', 14);
+        // ========================================
+        // SECCIÓN 2: INFORMACIÓN DE LA EMPRESA
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
         $pdf->SetTextColor(17, 153, 142);
-        $pdf->Cell(0, 8, utf8_decode('🏢 INFORMACIÓN DE LA EMPRESA'), 0, 1, 'L');
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Cell(0, 8, 'INFORMACIÓN DE LA EMPRESA', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
         $pdf->Ln(3);
         
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('dejavusans', '', 10);
         $pdf->SetTextColor(0, 0, 0);
         
         $this->addLabelValue($pdf, 'Nombre Comercial:', $company_info['nombre_comercial'] ?? 'N/A');
-        $this->addLabelValue($pdf, utf8_decode('Razón Social:'), $company_info['razon_social'] ?? 'N/A');
-        $this->addLabelValue($pdf, 'Tipo:', ucfirst($company_info['tipo_empresa'] ?? 'N/A'));
+        $this->addLabelValue($pdf, 'Razón Social:', $company_info['razon_social'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Tipo de Empresa:', ucfirst($company_info['tipo_empresa'] ?? 'N/A'));
         $this->addLabelValue($pdf, 'Giro:', ucfirst($company_info['giro'] ?? 'N/A'));
-        $this->addLabelValue($pdf, 'Contacto:', $company_info['nombre_contacto'] ?? 'N/A');
-        $this->addLabelValue($pdf, 'Email Contacto:', $company_info['email_contacto'] ?? 'N/A');
-        $this->addLabelValue($pdf, utf8_decode('Teléfono:'), $company_info['telefono_contacto'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Nombre del Contacto:', $company_info['nombre_contacto'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Email de Contacto:', $company_info['email_contacto'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Teléfono de Contacto:', $company_info['telefono_contacto'] ?? 'N/A');
+        
+        // Agencia de colocación
+        $agencia = isset($company_info['agencia_colocacion']) && $company_info['agencia_colocacion'] === 'si' ? 'Sí' : 'No';
+        $this->addLabelValue($pdf, '¿Agencia de Colocación?:', $agencia);
+        
         $pdf->Ln(5);
         
-        // --- SECCIÓN 3: PERIODO DE ESTANCIA ---
-        $pdf->SetFont('helvetica', 'B', 14);
+        // ========================================
+        // SECCIÓN 3: PERIODO DE ESTANCIA
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
         $pdf->SetTextColor(17, 153, 142);
-        $pdf->Cell(0, 8, utf8_decode('📅 PERIODO DE ESTANCIA'), 0, 1, 'L');
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Cell(0, 8, 'PERIODO DE ESTANCIA', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
         $pdf->Ln(3);
         
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('dejavusans', '', 10);
         $pdf->SetTextColor(0, 0, 0);
         
+        $fecha_inicio = date('d/m/Y', strtotime($accreditation['fecha_inicio']));
+        $fecha_fin = date('d/m/Y', strtotime($accreditation['fecha_fin']));
+        
+        // Calcular duración en días
+        $inicio = new DateTime($accreditation['fecha_inicio']);
+        $fin = new DateTime($accreditation['fecha_fin']);
+        $duracion = $inicio->diff($fin)->days;
+        
+        $this->addLabelValue($pdf, 'Fecha de Inicio:', $fecha_inicio);
+        $this->addLabelValue($pdf, 'Fecha de Conclusión:', $fecha_fin);
+        $this->addLabelValue($pdf, 'Duración Total:', $duracion . ' día(s)');
+        
+        // Días de estancia
         $dias_estancia = isset($company_info['dias_estancia']) && is_array($company_info['dias_estancia']) 
             ? implode(', ', array_map('ucfirst', $company_info['dias_estancia'])) 
             : 'N/A';
+        $this->addLabelValue($pdf, 'Días de Asistencia:', $dias_estancia);
         
-        $this->addLabelValue($pdf, 'Fecha Inicio:', date('d/m/Y', strtotime($accreditation['fecha_inicio'])));
-        $this->addLabelValue($pdf, 'Fecha Fin:', date('d/m/Y', strtotime($accreditation['fecha_fin'])));
-        $this->addLabelValue($pdf, utf8_decode('Días:'), $dias_estancia);
         $pdf->Ln(5);
         
-        // --- SECCIÓN 4: TIPO DE ACREDITACIÓN ---
-        $pdf->SetFont('helvetica', 'B', 14);
+        // ========================================
+        // SECCIÓN 4: TIPO DE ACREDITACIÓN
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
         $pdf->SetTextColor(17, 153, 142);
-        $pdf->Cell(0, 8, utf8_decode('📝 TIPO DE ACREDITACIÓN'), 0, 1, 'L');
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Cell(0, 8, 'TIPO DE ACREDITACIÓN', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
         $pdf->Ln(3);
         
-        $tipo_desc = $tipo === 'A' ? 'Tipo A - Empresa NO Registrada' : 'Tipo B - Empresa Registrada';
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->SetTextColor($tipo === 'A' ? 255 : 78, $tipo === 'A' ? 107 : 205, $tipo === 'A' ? 107 : 196);
-        $pdf->Cell(0, 7, utf8_decode($tipo_desc), 0, 1, 'C');
+        // Badge del tipo
+        $pdf->SetFont('dejavusans', 'B', 12);
+        if ($tipo === 'A') {
+            $pdf->SetFillColor(255, 107, 107);
+            $tipo_texto = 'TIPO A - EMPRESA NO REGISTRADA';
+        } else {
+            $pdf->SetFillColor(78, 205, 196);
+            $tipo_texto = 'TIPO B - EMPRESA REGISTRADA';
+        }
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->Cell(0, 8, $tipo_texto, 0, 1, 'C', true);
+        
+        $pdf->Ln(3);
+        $pdf->SetFont('dejavusans', '', 9);
+        $pdf->SetTextColor(100, 100, 100);
+        if ($tipo === 'A') {
+            $descripcion = 'La empresa NO está registrada en el sistema SIEP. El estudiante presentó: Boleta Global, Recibos de Nómina y Constancia Laboral.';
+        } else {
+            $descripcion = 'La empresa SÍ está registrada en el sistema SIEP. El estudiante presentó: Boleta Global, Carta de Aceptación, Constancia de Validación y Reporte Final.';
+        }
+        $pdf->MultiCell(0, 5, $descripcion, 0, 'C');
         $pdf->Ln(5);
         
-        // --- SECCIÓN 5: REVISIÓN UPIS ---
-        $pdf->SetFont('helvetica', 'B', 14);
+        // ========================================
+        // SECCIÓN 5: REVISIÓN Y APROBACIÓN UPIS
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
         $pdf->SetTextColor(17, 153, 142);
-        $pdf->Cell(0, 8, utf8_decode('✅ REVISIÓN UPIS'), 0, 1, 'L');
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Cell(0, 8, 'REVISIÓN Y APROBACIÓN UPIS', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
         $pdf->Ln(3);
         
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('dejavusans', '', 10);
         $pdf->SetTextColor(0, 0, 0);
         
-        $this->addLabelValue($pdf, utf8_decode('Fecha Aprobación:'), date('d/m/Y H:i', strtotime($accreditation['reviewed_at'])));
-        $this->addLabelValue($pdf, 'Comentarios:', $accreditation['upis_comments'] ?: 'Sin comentarios');
+        $fecha_aprobacion = date('d/m/Y H:i', strtotime($accreditation['reviewed_at']));
+        $this->addLabelValue($pdf, 'Fecha de Aprobación:', $fecha_aprobacion);
         
-        // --- PIE DE PÁGINA ---
-        $pdf->SetY(-20);
-        $pdf->SetFont('helvetica', 'I', 8);
+        // Revisor UPIS
+        $revisor = isset($accreditation['upis_first_name']) 
+            ? $accreditation['upis_first_name'] . ' ' . $accreditation['upis_last_name_p']
+            : 'N/A';
+        $this->addLabelValue($pdf, 'Revisado por:', $revisor);
+        
+        // Comentarios
+        $comentarios = !empty($accreditation['upis_comments']) 
+            ? $accreditation['upis_comments'] 
+            : 'Sin comentarios adicionales';
+        $this->addLabelValue($pdf, 'Comentarios UPIS:', $comentarios);
+        
+        $pdf->Ln(8);
+        
+        // ========================================
+        // SECCIÓN 6: DOCUMENTACIÓN PRESENTADA
+        // ========================================
+        $pdf->SetFont('dejavusans', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, 'DOCUMENTACIÓN PRESENTADA', 0, 1, 'L');
+        $this->drawSectionLine($pdf);
+        $pdf->Ln(3);
+        
+        $pdf->SetFont('dejavusans', '', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        if ($tipo === 'A') {
+            // Documentos Tipo A
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Boleta Global de Calificaciones', 0, 1, 'L');
+            
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Recibo(s) de Nómina', 0, 1, 'L');
+            
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Constancia Laboral de la Empresa', 0, 1, 'L');
+        } else {
+            // Documentos Tipo B
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Boleta Global de Calificaciones', 0, 1, 'L');
+            
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Carta de Aceptación de la Empresa', 0, 1, 'L');
+            
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Constancia de Validación de la Empresa', 0, 1, 'L');
+            
+            $pdf->Cell(10, 6, '✓', 0, 0, 'L');
+            $pdf->Cell(0, 6, 'Reporte Final de Estancia', 0, 1, 'L');
+        }
+        
+        $pdf->Ln(5);
+        
+        // ========================================
+        // PIE DE PÁGINA
+        // ========================================
+        $pdf->SetY(-25);
+        $pdf->SetFont('dejavusans', 'I', 8);
         $pdf->SetTextColor(150, 150, 150);
-        $pdf->Cell(0, 5, utf8_decode('Documento generado automáticamente por SIEP - UPIICSA IPN'), 0, 1, 'C');
-        $pdf->Cell(0, 5, utf8_decode('Fecha de generación: ' . date('d/m/Y H:i:s')), 0, 1, 'C');
+        $pdf->Cell(0, 4, '───────────────────────────────────────────────────────────────', 0, 1, 'C');
+        $pdf->Cell(0, 4, 'Documento generado automáticamente por SIEP - UPIICSA IPN', 0, 1, 'C');
+        $pdf->Cell(0, 4, 'Sistema Integral de Estancias Profesionales', 0, 1, 'C');
+        $pdf->Cell(0, 4, 'Fecha de generación: ' . date('d/m/Y H:i:s'), 0, 1, 'C');
         
         // Output
         $pdf->Output('Expediente_' . $accreditation['boleta'] . '.pdf', 'I');
@@ -487,9 +587,18 @@ public function generatePresentationLetter(array $student_data, $letter_number =
      * Método auxiliar para agregar label y valor
      */
     private function addLabelValue($pdf, $label, $value) {
-        $pdf->SetFont('helvetica', 'B', 10);
-        $pdf->Cell(50, 6, $label, 0, 0, 'L');
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->MultiCell(0, 6, utf8_decode($value), 0, 'L');
+        $pdf->SetFont('dejavusans', 'B', 10);
+        $pdf->Cell(60, 6, $label, 0, 0, 'L');
+        $pdf->SetFont('dejavusans', '', 10);
+        $pdf->MultiCell(0, 6, $value, 0, 'L');
+    }
+    
+    /**
+     * Método auxiliar para dibujar línea de sección
+     */
+    private function drawSectionLine($pdf) {
+        $pdf->SetLineWidth(0.5);
+        $pdf->SetDrawColor(17, 153, 142);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
     }
 }

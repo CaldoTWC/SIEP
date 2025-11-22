@@ -1661,7 +1661,7 @@ public function clearCompletedLetters() {
     exit;
 }
 
-    /**
+        /**
      * Descargar PDF completo de la acreditación
      */
     public function downloadAccreditationPDF() {
@@ -1672,8 +1672,8 @@ public function clearCompletedLetters() {
             die('ID de acreditación no proporcionado');
         }
         
-        require_once(__DIR__ . '/../Models/AccreditationSubmission.php');
-        $accreditationModel = new AccreditationSubmission();
+        require_once(__DIR__ . '/../Models/Accreditation.php');
+        $accreditationModel = new Accreditation();
         
         $accreditation = $accreditationModel->getAccreditationDetailsById($id);
         
@@ -1688,7 +1688,4 @@ public function clearCompletedLetters() {
         $docService = new DocumentService();
         $docService->generateAccreditationExpediente($accreditation, $metadata);
     }
-}
-
-}
 }
