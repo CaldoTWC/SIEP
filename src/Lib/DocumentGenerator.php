@@ -335,4 +335,161 @@ public function generatePresentationLetter(array $student_data, $letter_number =
         
         $pdf->Output('I', 'Reporte_Historico_' . date('Y-m-d') . '.pdf', true);
     }
+
+        /**
+     * Genera el expediente completo de acreditación en PDF
+     * 
+     * @param array $accreditation - Datos de la acreditación
+     * @param array $metadata - Metadata con información del estudiante y empresa
+     */
+    public function generateAccreditationExpediente($accreditation, $metadata) {
+        // Verificar que TCPDF esté disponible
+        if (!file_exists(__DIR__ . '/../../vendor/autoload.php')) {
+            die("Error: Librería TCPDF no instalada.");
+        }
+        
+        require_once(__DIR__ . '/../../vendor/autoload.php');
+        
+        $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8');
+        
+        // Configuración del documento
+        $pdf->SetCreator('SIEP - IPN UPIICSA');
+        $pdf->SetAuthor('Unidad Politécnica de Integración Social');
+        $pdf->SetTitle('Expediente de Acreditación - ' . $accreditation['boleta']);
+        $pdf->SetSubject('Acreditación Aprobada');
+        
+        // Remover header/footer por defecto
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(true, 15);
+        $pdf->AddPage();
+        
+        // Extraer datos
+        $student_info = $metadata['student_info'] ?? [];
+        $company_info = $metadata['company_info'] ?? [];
+        $tipo = $accreditation['tipo_acreditacion'];
+        
+        // --- ENCABEZADO ---
+        $pdf->SetFont('helvetica', 'B', 20);
+        $pdf->SetTextColor(0, 74, 153);
+        $pdf->Cell(0, 10, utf8_decode('📋 EXPEDIENTE DE ACREDITACIÓN'), 0, 1, 'C');
+        $pdf->Ln(2);
+        
+        // Estado
+        $pdf->SetFont('helvetica', 'B', 12);
+        $pdf->SetFillColor(40, 167, 69);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->Cell(0, 8, utf8_decode('✅ APROBADO'), 0, 1, 'C', true);
+        $pdf->Ln(5);
+        
+        // --- SECCIÓN 1: INFORMACIÓN DEL ESTUDIANTE ---
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, utf8_decode('👤 INFORMACIÓN DEL ESTUDIANTE'), 0, 1, 'L');
+        $pdf->SetLineWidth(0.5);
+        $pdf->SetDrawColor(17, 153, 142);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(3);
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $this->addLabelValue($pdf, 'Boleta:', $accreditation['boleta']);
+        $this->addLabelValue($pdf, 'Nombre:', $accreditation['first_name'] . ' ' . $accreditation['last_name_p'] . ' ' . $accreditation['last_name_m']);
+        $this->addLabelValue($pdf, 'Carrera:', $accreditation['career']);
+        $this->addLabelValue($pdf, 'Email:', $student_info['email_institucional'] ?? 'N/A');
+        $this->addLabelValue($pdf, utf8_decode('Teléfono:'), $student_info['telefono'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Semestre:', ($student_info['semestre'] ?? 'N/A') . utf8_decode('°'));
+        $pdf->Ln(5);
+        
+        // --- SECCIÓN 2: INFORMACIÓN DE LA EMPRESA ---
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, utf8_decode('🏢 INFORMACIÓN DE LA EMPRESA'), 0, 1, 'L');
+        $pdf->SetLineWidth(0.5);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(3);
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $this->addLabelValue($pdf, 'Nombre Comercial:', $company_info['nombre_comercial'] ?? 'N/A');
+        $this->addLabelValue($pdf, utf8_decode('Razón Social:'), $company_info['razon_social'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Tipo:', ucfirst($company_info['tipo_empresa'] ?? 'N/A'));
+        $this->addLabelValue($pdf, 'Giro:', ucfirst($company_info['giro'] ?? 'N/A'));
+        $this->addLabelValue($pdf, 'Contacto:', $company_info['nombre_contacto'] ?? 'N/A');
+        $this->addLabelValue($pdf, 'Email Contacto:', $company_info['email_contacto'] ?? 'N/A');
+        $this->addLabelValue($pdf, utf8_decode('Teléfono:'), $company_info['telefono_contacto'] ?? 'N/A');
+        $pdf->Ln(5);
+        
+        // --- SECCIÓN 3: PERIODO DE ESTANCIA ---
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, utf8_decode('📅 PERIODO DE ESTANCIA'), 0, 1, 'L');
+        $pdf->SetLineWidth(0.5);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(3);
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $dias_estancia = isset($company_info['dias_estancia']) && is_array($company_info['dias_estancia']) 
+            ? implode(', ', array_map('ucfirst', $company_info['dias_estancia'])) 
+            : 'N/A';
+        
+        $this->addLabelValue($pdf, 'Fecha Inicio:', date('d/m/Y', strtotime($accreditation['fecha_inicio'])));
+        $this->addLabelValue($pdf, 'Fecha Fin:', date('d/m/Y', strtotime($accreditation['fecha_fin'])));
+        $this->addLabelValue($pdf, utf8_decode('Días:'), $dias_estancia);
+        $pdf->Ln(5);
+        
+        // --- SECCIÓN 4: TIPO DE ACREDITACIÓN ---
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, utf8_decode('📝 TIPO DE ACREDITACIÓN'), 0, 1, 'L');
+        $pdf->SetLineWidth(0.5);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(3);
+        
+        $tipo_desc = $tipo === 'A' ? 'Tipo A - Empresa NO Registrada' : 'Tipo B - Empresa Registrada';
+        $pdf->SetFont('helvetica', 'B', 11);
+        $pdf->SetTextColor($tipo === 'A' ? 255 : 78, $tipo === 'A' ? 107 : 205, $tipo === 'A' ? 107 : 196);
+        $pdf->Cell(0, 7, utf8_decode($tipo_desc), 0, 1, 'C');
+        $pdf->Ln(5);
+        
+        // --- SECCIÓN 5: REVISIÓN UPIS ---
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(17, 153, 142);
+        $pdf->Cell(0, 8, utf8_decode('✅ REVISIÓN UPIS'), 0, 1, 'L');
+        $pdf->SetLineWidth(0.5);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(3);
+        
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $this->addLabelValue($pdf, utf8_decode('Fecha Aprobación:'), date('d/m/Y H:i', strtotime($accreditation['reviewed_at'])));
+        $this->addLabelValue($pdf, 'Comentarios:', $accreditation['upis_comments'] ?: 'Sin comentarios');
+        
+        // --- PIE DE PÁGINA ---
+        $pdf->SetY(-20);
+        $pdf->SetFont('helvetica', 'I', 8);
+        $pdf->SetTextColor(150, 150, 150);
+        $pdf->Cell(0, 5, utf8_decode('Documento generado automáticamente por SIEP - UPIICSA IPN'), 0, 1, 'C');
+        $pdf->Cell(0, 5, utf8_decode('Fecha de generación: ' . date('d/m/Y H:i:s')), 0, 1, 'C');
+        
+        // Output
+        $pdf->Output('Expediente_' . $accreditation['boleta'] . '.pdf', 'I');
+        exit;
+    }
+    
+    /**
+     * Método auxiliar para agregar label y valor
+     */
+    private function addLabelValue($pdf, $label, $value) {
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(50, 6, $label, 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->MultiCell(0, 6, utf8_decode($value), 0, 'L');
+    }
 }

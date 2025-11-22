@@ -136,13 +136,14 @@ $session->guard(['upis', 'admin']);
         .action-buttons {
             display: flex;
             gap: 8px;
+            justify-content: center;
         }
 
         .btn-small {
-            padding: 6px 12px;
+            padding: 8px 16px;
             border: none;
             border-radius: 5px;
-            font-size: 0.85em;
+            font-size: 0.9em;
             font-weight: bold;
             cursor: pointer;
             text-decoration: none;
@@ -157,6 +158,7 @@ $session->guard(['upis', 'admin']);
 
         .btn-view:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
         }
 
         .btn-download {
@@ -290,7 +292,7 @@ $session->guard(['upis', 'admin']);
                             <th>Empresa</th>
                             <th>Tipo</th>
                             <th>Fecha Aprobación</th>
-                            <th>Acciones</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -312,16 +314,12 @@ $session->guard(['upis', 'admin']);
                                 <td><?php echo date('d/m/Y H:i', strtotime($acc['reviewed_at'])); ?></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="/SIEP/public/index.php?action=viewAccreditationDetails&id=<?php echo $acc['id']; ?>" 
-                                           class="btn-small btn-view"
-                                           title="Ver detalles">
-                                            👁️ Ver
-                                        </a>
+                                        <!-- ✅ BOTÓN ÚNICO: Abre el PDF directamente (se puede ver y descargar desde ahí) -->
                                         <a href="/SIEP/public/index.php?action=downloadAccreditationPDF&id=<?php echo $acc['id']; ?>" 
-                                           class="btn-small btn-download"
-                                           title="Descargar PDF con toda la información"
+                                           class="btn-small btn-view"
+                                           title="Ver/Descargar PDF con toda la información"
                                            target="_blank">
-                                            📄 PDF
+                                            📄 Ver Documento
                                         </a>
                                     </div>
                                 </td>

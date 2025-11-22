@@ -1660,4 +1660,35 @@ public function clearCompletedLetters() {
     header('Location: /SIEP/public/index.php?action=presentationLettersHub&tab=completed');
     exit;
 }
+
+    /**
+     * Descargar PDF completo de la acreditación
+     */
+    public function downloadAccreditationPDF() {
+        $this->session->guard(['upis', 'admin']);
+        
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            die('ID de acreditación no proporcionado');
+        }
+        
+        require_once(__DIR__ . '/../Models/AccreditationSubmission.php');
+        $accreditationModel = new AccreditationSubmission();
+        
+        $accreditation = $accreditationModel->getAccreditationDetailsById($id);
+        
+        if (!$accreditation || $accreditation['status'] !== 'approved') {
+            die('Acreditación no encontrada o no está aprobada');
+        }
+        
+        // Decodificar metadata
+        $metadata = json_decode($accreditation['metadata'], true);
+        
+        // Llamar al servicio de generación de documentos
+        $docService = new DocumentService();
+        $docService->generateAccreditationExpediente($accreditation, $metadata);
+    }
+}
+
+}
 }

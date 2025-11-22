@@ -533,10 +533,17 @@ case 'downloadDocument':
         $upisController = new UpisController();
         $upisController->approveAccreditation();
         break;
-    case 'rejectAccreditation':
+        case 'rejectAccreditation':
         require_once(__DIR__ . '/../src/Controllers/UpisController.php');
         $upisController = new UpisController();
         $upisController->rejectAccreditation();
+        break;
+
+  
+    case 'downloadAccreditationPDF':
+        require_once(__DIR__ . '/../src/Controllers/UpisController.php');
+        $upisController = new UpisController();
+        $upisController->downloadAccreditationPDF();
         break;
 
     // --- RUTA POR DEFECTO ---
