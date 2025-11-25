@@ -13,194 +13,31 @@ $session->guard(['student']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitar Carta de Presentación - SIEP</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #004a99;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        
-        .intro-text {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f0f8ff;
-            border-radius: 5px;
-        }
-        
-        .section-title {
-            color: #004a99;
-            border-bottom: 2px solid #004a99;
-            padding-bottom: 10px;
-            margin-top: 30px;
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
-        
-        .form-group input[type="text"],
-        .form-group input[type="email"],
-        .form-group input[type="number"],
-        .form-group select,
-        .form-group input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        
-        .form-group input[readonly] {
-            background-color: #f5f5f5;
-            cursor: not-allowed;
-        }
-        
-        .form-group small {
-            display: block;
-            margin-top: 5px;
-            color: #666;
-            font-size: 13px;
-        }
-        
-        .editable-notice {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #856404;
-        }
-        
-        .readonly-notice {
-            background: #e7f3ff;
-            border: 1px solid #2196F3;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #0d47a1;
-        }
-
-        .info-notice {
-            background: #d1ecf1;
-            border: 1px solid #17a2b8;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #0c5460;
-        }
-
-        .template-info-box {
-            background: #f8f9fa;
-            border: 2px solid #6c757d;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .template-info-box h3 {
-            margin-top: 0;
-            color: #495057;
-            font-size: 16px;
-        }
-
-        .template-info-box ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-
-        .template-info-box li {
-            margin: 5px 0;
-            color: #6c757d;
-        }
-        
-        .btn-submit {
-            width: 100%;
-            padding: 15px;
-            background: #8b1538;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.3s;
-        }
-        
-        .btn-submit:hover {
-            background: #6d1028;
-        }
-
-        .btn-submit:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #004a99;
-            text-decoration: none;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .required-indicator {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        hr.separator {
-            margin: 30px 0;
-            border: none;
-            border-top: 2px solid #dee2e6;
-        }
-
-        #recipient_fields {
-            background: #f8f9fa;
-            padding: 15px;
-            border-left: 4px solid #004a99;
-            margin: 15px 0;
-            border-radius: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="/SIEP/public/css/student.css">
 </head>
-<body>
-    <div class="form-container">
-        <h1>📝 Solicitud de Carta de Presentación</h1>
-        
-        <div class="intro-text">
-            <strong>Sistema de Estancias Profesionales - ESCOM</strong><br>
-            Completa el siguiente formulario para solicitar tu carta de presentación.
-        </div>
 
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/SIEP/public/index.php" class="nav-logo">SIEP</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#hero" class="nav-link">Inicio</a></li>
+                <li class="nav-item"><a href="#user-section" class="nav-link">Usuarios</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showLogin" class="nav-link btn-nav">Iniciar
+                        Sesión</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showRegisterSelection"
+                        class="nav-link btn-nav">Registrarse</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>📝 Solicitud de Carta de Presentación</h1>
+            <p>Completa el siguiente formulario para solicitar tu carta de presentación.</p>
+        </div>
+        <a href="/SIEP/public/index.php?action=studentDashboard" class="logout-btn">← Volver al Dashboard</a><br><br>
         <div class="info-notice">
             <strong>ℹ️ Información importante:</strong><br>
             Ahora puedes elegir entre 4 tipos de cartas según tus necesidades:
@@ -409,9 +246,7 @@ $session->guard(['student']);
                 📤 Enviar Solicitud
             </button>
 
-            <a href="/SIEP/public/index.php?action=studentDashboard" class="back-link">
-                ← Volver al Dashboard
-            </a>
+            <a href="/SIEP/public/index.php?action=studentDashboard" class="logout-btn">← Volver al Dashboard</a>
         </form>
     </div>
 

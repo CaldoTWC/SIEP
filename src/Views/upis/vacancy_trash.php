@@ -9,74 +9,23 @@ $session->guard(['upis', 'admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Papelera de Vacantes - UPIS</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
-        th { background-color: #dc3545; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            color: white;
-        }
-        
-        .badge.upis-review { background: #6c757d; }
-        .badge.company-cancel { background: #ffc107; color: #333; }
-        .badge.upis-takedown { background: #dc3545; }
-        
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin: 2px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn-restore { background: #28a745; color: white; }
-        .btn-delete { background: #6c757d; color: white; }
-        
-        .stats-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #dc3545;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="/SIEP/public/css/upis.css">
+
 </head>
 <body>
+    <!-- Encabezado bonito -->
+    <div class="upis-header">
+        <h1>Panel de Administración de UPIS</h1>
+    </div>
     <div class="container">
-        <h1>🗑️ Papelera de Vacantes</h1>
-        <p>Restaura vacantes rechazadas o elimínalas permanentemente</p>
-        
-        <a href="/SIEP/public/index.php?action=vacancyHub" class="btn">← Volver al Hub</a>
-        
+        <div class="page-header">
+            <h1>🗑️ Papelera de Vacantes</h1>
+            <p>Restaura vacantes rechazadas o elimínalas permanentemente</p>
+        </div>
+
+
+        <a href="/SIEP/public/index.php?action=vacancyHub" class="logout-btn">← Volver al Hub</a>
+
         <!-- Estadísticas de la Papelera -->
         <div class="stats-box">
             <div class="stat-item">
@@ -96,13 +45,13 @@ $session->guard(['upis', 'admin']);
                 <div class="stat-label">Tumbadas por UPIS</div>
             </div>
         </div>
-        
+
         <?php if (empty($rejectedVacancies)): ?>
             <p style="margin-top: 30px; text-align: center; color: #666;">
                 ✅ La papelera está vacía
             </p>
         <?php else: ?>
-            <table>
+            <table class="trash">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -138,33 +87,35 @@ $session->guard(['upis', 'admin']);
                                 ?>
                             </td>
                             <td>
-                                <?php 
+                                <?php
                                 echo htmlspecialchars($vacancy['rejection_reason'] ?? 'N/A');
                                 ?>
                             </td>
                             <td>
                                 <small>
-                                    <?php 
+                                    <?php
                                     $notes = $vacancy['rejection_notes'] ?? 'Sin justificación';
-                                    echo strlen($notes) > 100 
-                                        ? htmlspecialchars(substr($notes, 0, 100)) . '...' 
+                                    echo strlen($notes) > 100
+                                        ? htmlspecialchars(substr($notes, 0, 100)) . '...'
                                         : htmlspecialchars($notes);
                                     ?>
                                 </small>
                             </td>
                             <td><?php echo date('d/m/Y', strtotime($vacancy['approved_at'])); ?></td>
                             <td>
-                                <form method="POST" action="/SIEP/public/index.php?action=restoreVacancy" style="display: inline;">
+                                <form method="POST" action="/SIEP/public/index.php?action=restoreVacancy"
+                                    style="display: inline;">
                                     <input type="hidden" name="vacancy_id" value="<?php echo $vacancy['id']; ?>">
-                                    <button type="submit" class="btn-small btn-restore" 
-                                            onclick="return confirm('¿Restaurar esta vacante a estado pendiente?')">
+                                    <button type="submit" class="btn-small btn-restore"
+                                        onclick="return confirm('¿Restaurar esta vacante a estado pendiente?')">
                                         ♻️ Restaurar
                                     </button>
                                 </form>
-                                
-                                <button onclick="showDeleteModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
-                                        class="btn-small btn-delete">
-                                    💀 Eliminar
+
+                                <button
+                                    onclick="showDeleteModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')"
+                                    class="btn-small btn-delete">
+                                    ⚠️ Eliminar
                                 </button>
                             </td>
                         </tr>
@@ -172,7 +123,7 @@ $session->guard(['upis', 'admin']);
                 </tbody>
             </table>
         <?php endif; ?>
-        
+
     </div>
     
     <script>

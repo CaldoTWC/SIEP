@@ -1,157 +1,179 @@
 <?php
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
-$session->guard(['company']); 
+$session->guard(['company']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Empresa</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #005a9c; color: white; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        
-        .status { font-weight: bold; padding: 5px; border-radius: 4px; color: white; text-align: center; }
-        .status.pending { background-color: #ffc107; color: #333; }
-        .status.approved { background-color: #28a745; }
-        
-        .help-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 13px;
-            margin: 2px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn-complete { background: #17a2b8; color: white; }
-        .btn-cancel { background: #dc3545; color: white; }
-        .btn-view { background: #6c757d; color: white; }
-    </style>
+    <link rel="stylesheet" href="/SIEP/public/css/company.css">
+
 </head>
+
 <body>
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/SIEP/public/index.php" class="nav-logo">SIEP</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#hero" class="nav-link">Inicio</a></li>
+                <li class="nav-item"><a href="#user-section" class="nav-link">Usuarios</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showLogin" class="nav-link btn-nav">Iniciar
+                        Sesión</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showRegisterSelection"
+                        class="nav-link btn-nav">Registrarse</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
     <div class="container">
-        <h1>Panel de Administración de la Empresa</h1>
-        <p>Bienvenido, <?php echo htmlspecialchars($_SESSION['user_name']); ?>.</p>
-        
-        <div class="menu-buttons">
-    <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="btn">Publicar Nueva Vacante</a>
-    <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="btn" style="background-color: #007bff;">Generar Carta de Aceptación</a>
-    <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="btn" style="background-color: #28a745;">Generar Constancia de Validación</a>
-    
-    <!-- ✅ BOTÓN DE NOTIFICACIONES -->
-    <a href="/SIEP/public/index.php?action=showAllNotifications" class="btn" style="background-color: #ff6b6b;">
-        🔔 Mis Notificaciones
-        <?php
-        // Mostrar contador de no leídas
-        require_once(__DIR__ . '/../../Models/Notification.php');
-        require_once(__DIR__ . '/../../Config/Database.php');
-        $database = Database::getInstance();
-        $notificationModel = new Notification($database->getConnection());
-        $unreadCount = $notificationModel->countUnread($_SESSION['user_id']);
-        if ($unreadCount > 0) {
-            echo '<span style="background: #fff; color: #ff6b6b; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: bold;">' . $unreadCount . '</span>';
-        }
-        ?>
-    </a>
-    
-    <!-- ✅ BOTÓN DE CAMBIAR CONTRASEÑA -->
-    <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn" style="background-color: #6c757d;">Cambiar Contraseña</a>
-    
-    <!-- ✅ BOTÓN DE CERRAR SESIÓN -->
-    <a href="/SIEP/public/index.php?action=logout" class="btn" style="background-color: #dc3545;">Cerrar Sesión</a>
-</div>
-        
-        <hr style="margin: 30px 0;">
-        
-        <h2>Mis Vacantes Publicadas</h2>
-        
+        <div class="page-header">
+            <h1>Panel de Administración</h1>
+            
+        </div>
+
+        <div class="task-grid">
+            <a href="/SIEP/public/index.php?action=showPostVacancyForm" class="task-card">
+                <div class="info">
+                    <h3>Publicar Nueva Vacante</h3>
+                </div>
+                <div class="counter">💼</div>
+            </a>
+
+            <a href="/SIEP/public/index.php?action=showAcceptanceLetterForm" class="task-card">
+                <div class="info">
+                    <h3>Generar Carta de Aceptación</h3>
+                </div>
+                <div class="counter">💼</div>
+            </a>
+
+            <a href="/SIEP/public/index.php?action=showValidationLetterForm" class="task-card">
+                <div class="info">
+                    <h3>Generar Constancia de Validación</h3>
+                </div>
+                <div class="counter">💼</div>
+            </a>
+
+            <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="task-card">
+                <div class="info">
+                    <h3>Cambiar Contraseña</h3>
+                </div>
+                <div class="counter">💼</div>
+            </a>
+
+            <a href="/SIEP/public/index.php?action=showAllNotifications" class="task-card">
+                <div class="info">
+                    <h3>🔔 Mis Notificaciones</h3>
+                </div>
+                <div class="counter">💼</div>
+                <?php
+                // Mostrar contador de no leídas
+                require_once(__DIR__ . '/../../Models/Notification.php');
+                require_once(__DIR__ . '/../../Config/Database.php');
+                $database = Database::getInstance();
+                $notificationModel = new Notification($database->getConnection());
+                $unreadCount = $notificationModel->countUnread($_SESSION['user_id']);
+                if ($unreadCount > 0) {
+                    echo '<span style="background: #fff; color: #ff6b6b; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: bold;">' . $unreadCount . '</span>';
+                }
+                ?>
+            </a>
+
+
+            <a href="/SIEP/public/index.php?action=logout" class="logout-btn">Cerrar Sesión</a>
+        </div><br>
+
+        <div class="page-header">
+            <h2>Mis Vacantes Publicadas</h2>
+        </div>
+
+
         <!-- Cuadro de ayuda -->
         <div class="help-box">
             <strong>ℹ️ Guía rápida de acciones:</strong><br><br>
-            <strong>✔️ Completar:</strong> Usa cuando llenaste todos los cupos o la estancia concluyó exitosamente.<br>
-            <strong>❌ Cancelar:</strong> Usa cuando hay cambios de presupuesto, proyecto cancelado o reestructuración.
+            <strong>✔️ Completar:</strong> Usa cuando llenaste todos los cupos o la estancia concluyó
+            exitosamente.<br>
+            <strong>❌ Cancelar:</strong> Usa cuando hay cambios de presupuesto, proyecto cancelado o
+            reestructuración.
         </div>
-        
-        <?php 
+
+        <?php
         // Filtrar solo vacantes activas y pendientes (excluir completed y rejected)
-        $active_vacancies = array_filter($vacancies, function($v) {
+        $active_vacancies = array_filter($vacancies, function ($v) {
             return in_array($v['status'], ['pending', 'approved']);
         });
         ?>
-        
-        <?php if (empty($active_vacancies)): ?>
-            <p>Aún no has publicado ninguna vacante activa. ¡Crea una nueva!</p>
-        <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Título del Puesto</th>
-                        <th>Modalidad</th>
-                        <th>Plazas</th>
-                        <th>Apoyo Mensual</th>
-                        <th>Publicada</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($active_vacancies as $vacancy): ?>
+        <div class="companyHubTable">
+            <?php if (empty($active_vacancies)): ?>
+                <p>Aún no has publicado ninguna vacante activa. ¡Crea una nueva!</p>
+            <?php else: ?>
+                <table class="companyHub">
+                    <thead>
                         <tr>
-                            <td>
-                                <strong><?php echo htmlspecialchars($vacancy['title']); ?></strong>
-                            </td>
-                            <td><?php echo htmlspecialchars($vacancy['modality']); ?></td>
-                            <td><?php echo $vacancy['num_vacancies']; ?></td>
-                            <td>$<?php echo number_format($vacancy['economic_support'], 2); ?></td>
-                            <td><?php echo date('d/m/Y', strtotime($vacancy['posted_at'])); ?></td>
-                            <td>
-                                <?php
-                                if ($vacancy['status'] === 'pending') {
-                                    echo '<span class="status pending">⏳ Pendiente</span>';
-                                } else {
-                                    echo '<span class="status approved">✅ Activa</span>';
-                                }
-                                ?>
-                            </td>
-                            <td>
-                                <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>" 
-                                   class="btn-small btn-view">👁️ Ver</a>
-                                
-                                <?php if ($vacancy['status'] === 'approved'): ?>
-                                    <button onclick="showCompleteModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
-                                            class="btn-small btn-complete">✔️ Completar</button>
-                                    <button onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
-                                            class="btn-small btn-cancel">❌ Cancelar</button>
-                                <?php endif; ?>
-                                
-                                <?php if ($vacancy['status'] === 'pending'): ?>
-                                    <button onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
-                                            class="btn-small btn-cancel">❌ Cancelar</button>
-                                <?php endif; ?>
-                            </td>
+                            <th>Título del Puesto</th>
+                            <th>Modalidad</th>
+                            <th>Plazas</th>
+                            <th>Apoyo Mensual</th>
+                            <th>Publicada</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($active_vacancies as $vacancy): ?>
+                            <tr>
+                                <td>
+                                    <strong><?php echo htmlspecialchars($vacancy['title']); ?></strong>
+                                </td>
+                                <td><?php echo htmlspecialchars($vacancy['modality']); ?></td>
+                                <td><?php echo $vacancy['num_vacancies']; ?></td>
+                                <td>$<?php echo number_format($vacancy['economic_support'], 2); ?></td>
+                                <td><?php echo date('d/m/Y', strtotime($vacancy['posted_at'])); ?></td>
+                                <td>
+                                    <?php
+                                    if ($vacancy['status'] === 'pending') {
+                                        echo '<span class="status pending">⏳ Pendiente</span>';
+                                    } else {
+                                        echo '<span class="status approved">✅ Activa</span>';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>"
+                                        class="btn-small btn-view">👁️ Ver</a>
+
+                                    <?php if ($vacancy['status'] === 'approved'): ?>
+                                        <button
+                                            onclick="showCompleteModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')"
+                                            class="btn-small btn-complete">✔️ Completar</button>
+                                        <button
+                                            onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')"
+                                            class="btn-small btn-cancel">❌ Cancelar</button>
+                                    <?php endif; ?>
+
+                                    <?php if ($vacancy['status'] === 'pending'): ?>
+                                        <button
+                                            onclick="showCancelModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')"
+                                            class="btn-small btn-cancel">❌ Cancelar</button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
     </div>
-    
+
+
+
+
     <script>
         // Modal para completar vacante
         function showCompleteModal(id, title) {
@@ -206,7 +228,7 @@ $session->guard(['company']);
             `;
             document.body.insertAdjacentHTML('beforeend', html);
         }
-        
+
         // Modal para cancelar vacante
         function showCancelModal(id, title) {
             const html = `
@@ -269,4 +291,5 @@ $session->guard(['company']);
         }
     </script>
 </body>
+
 </html>

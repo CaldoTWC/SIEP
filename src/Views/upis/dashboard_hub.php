@@ -2,106 +2,57 @@
 // Archivo: src/Views/upis/dashboard_hub.php
 require_once(__DIR__ . '/../../Lib/Session.php');
 $session = new Session();
-$session->guard(['upis', 'admin']); 
+$session->guard(['upis', 'admin']);
 // Las variables de conteo ($pendingCompaniesCount, etc.) vienen del controlador
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Panel de Administración - UPIS</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        .task-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .task-card {
-            background-color: #fff;
-            border: 1px solid var(--color-borde);
-            border-radius: 8px;
-            padding: 20px;
-            text-decoration: none;
-            color: var(--color-texto-principal);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .task-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 39, 87, 0.1);
-        }
-        .task-card .info h3 {
-            margin: 0 0 10px 0;
-            color: var(--color-ipn-azul);
-        }
-        .task-card .info p {
-            margin: 0;
-            text-align: left;
-        }
-        .task-card .counter {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--color-ipn-guinda);
-            padding-left: 20px;
-            border-left: 2px solid var(--color-borde);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Panel de Administración de UPIS</h1>
-        <p>Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>. Selecciona una tarea para comenzar.</p>
+    <link rel="stylesheet" href="/SIEP/public/css/upis.css">
 
+</head>
+
+<body>
+    <!-- Encabezado bonito -->
+    <div class="upis-header">
+        <h1>Panel de Administración de UPIS</h1>
+        <p>Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>. Selecciona una tarea
+            para comenzar.</p>
+    </div>
+
+
+    <div class="container">
+
+        <!-- GRID DE TAREAS -->
         <div class="task-grid">
-            <!-- 🆕 Hub de Gestión de Empresas -->
+            <a href="/SIEP/public/index.php?action=presentationLettersHub" class="task-card">
+                <div class="info">
+                    <h3>📝 Cartas de Presentación</h3>
+                    <p>Gestionar solicitudes de estudiantes.</p>
+                </div>
+                <div class="counter"><?php echo $pendingLettersCount; ?></div>
+            </a>
+
+            <!-- Revisar Acreditaciones -->
+            <a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
+                <div class="info">
+                    <h3>✅ Acreditaciones</h3>
+                    <p>Revisar solicitudes de acreditación de estudiantes.</p>
+                </div>
+                <div class="counter">📋</div>
+            </a>
+
             <a href="/SIEP/public/index.php?action=companyManagementHub" class="task-card">
                 <div class="info">
-                    <h3>🏢 Gestión de Empresas</h3>
-                    <p>Hub integrado: pendientes, activas, historial de rechazos.</p>
+                    <h3>🏢 Empresas</h3>
+                    <p>Revisar solicitudes de acreditación de estudiantes.</p>
                 </div>
-                <div class="counter"><?php echo $pendingCompaniesCount; ?></div>
+                <div class="counter">📋</div>
             </a>
 
-            <a href="/SIEP/public/index.php?action=reviewVacancies" class="task-card">
-                <div class="info">
-                    <h3>Vacantes</h3>
-                    <p>Validar nuevas vacantes publicadas.</p>
-                </div>
-                <div class="counter"><?php echo $pendingVacanciesCount; ?></div>
-            </a>
-
-            <!-- Cambiar la línea del task-card de cartas -->
-<a href="/SIEP/public/index.php?action=presentationLettersHub" class="task-card">
-    <div class="info">
-        <h3>📝 Cartas de Presentación</h3>
-        <p>Gestionar solicitudes de estudiantes.</p>
-    </div>
-    <div class="counter"><?php echo $pendingLettersCount; ?></div>
-</a>
-
-            <!-- Gestión de Plantillas -->
-<a href="/SIEP/public/index.php?action=manageTemplates" class="task-card">
-    <div class="info">
-        <h3>🎨 Plantillas</h3>
-        <p>Gestionar plantillas de cartas y periodo académico.</p>
-    </div>
-    <div class="counter">⚙️</div>
-</a>
-
-            <a href="/SIEP/public/index.php?action=showUploadDocumentsForm" class="task-card">
-                <div class="info">
-                <h3>📤 Subir Cartas Firmadas</h3>
-                <p>Devolver documentos firmados y sellados.</p>
-                </div>
-                <div class="counter" style="font-size: 2rem;">📄</div>
-            </a>
-
-                        <!-- Hub de Gestión de Vacantes (NUEVO) -->
             <a href="/SIEP/public/index.php?action=vacancyHub" class="task-card">
                 <div class="info">
                     <h3>📊 Gestión de Vacantes</h3>
@@ -109,41 +60,36 @@ $session->guard(['upis', 'admin']);
                 </div>
                 <div class="counter">🔄</div>
             </a>
-                        <!-- Centro de Reportes y Estadísticas -->
+
             <a href="/SIEP/public/index.php?action=showHistory" class="task-card">
                 <div class="info">
-                    <h3>📊 Centro de Reportes</h3>
+                    <h3>📈 Centro de Reportes</h3>
                     <p>Reportes, estadísticas y análisis del sistema.</p>
                 </div>
-                <div class="counter">📈</div>
+                <div class="counter">📊</div>
             </a>
 
+            <a href="/SIEP/public/index.php?action=manageTemplates" class="task-card">
+                <div class="info">
+                    <h3>🎨 Plantillas</h3>
+                    <p>Gestionar plantillas de cartas y periodo académico.</p>
+                </div>
+                <div class="counter">⚙️</div>
+            </a>
+            <!-- Botón de cambio de contraseña -->
+            <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="task-card">
+                <div class="info">
+                    <h3>🔐 Cambiar Contraseña</h3>
+                    <p>Revisar solicitudes de acreditación de estudiantes.</p>
+                </div>
+                <div class="counter">⚙️</div>
+            </a>
+        </div>
 
-
-<a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
-    <div class="info">
-        <h3>✅ Acreditaciones</h3>
-        <p>Revisar y aprobar solicitudes de acreditación.</p>
-    </div>
-    <div class="counter">
-        <?php echo $pendingAccreditations ?? '0'; ?>
-    </div>
-</a>
-
-            <!-- Revisar Acreditaciones -->
-<a href="/SIEP/public/index.php?action=reviewAccreditations" class="task-card">
-    <div class="info">
-        <h3>✅ Acreditaciones</h3>
-        <p>Revisar solicitudes de acreditación de estudiantes.</p>
-    </div>
-    <div class="counter">📋</div>
-</a>
-
-        
-
-        <a href="/SIEP/public/index.php?action=showChangePasswordForm" class="btn btn-outline-secondary">🔐 Cambiar Contraseña </a>
-
-        <a href="/SIEP/public/index.php?action=logout" class="btn" style="background-color: #5a6a7e; margin-top: 40px;">Cerrar Sesión</a>
+        <!-- Botón de cerrar sesión -->
+        <br>
+        <a href="/SIEP/public/index.php?action=logout" class="logout-btn">Cerrar Sesión</a>
     </div>
 </body>
+
 </html>

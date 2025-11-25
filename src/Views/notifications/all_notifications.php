@@ -19,204 +19,40 @@ $pageTitle = 'Mis Notificaciones';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?> - SIEP</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <link rel="stylesheet" href="/SIEP/public/css/notification.css">
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #6f1d1b 0%, #8b2a27 100%);
-            color: white;
-            padding: 30px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-secondary {
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: rgba(255,255,255,0.3);
-        }
-
-        .notifications-container {
-            padding: 0;
-        }
-
-        .notification-item {
-            padding: 25px 30px;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.2s;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .notification-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .notification-item.unread {
-            background-color: #e3f2fd;
-        }
-
-        .notification-item.unread::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 5px;
-            background-color: #6f1d1b;
-        }
-
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 10px;
-        }
-
-        .notification-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .notification-time {
-            font-size: 13px;
-            color: #999;
-            white-space: nowrap;
-        }
-
-        .notification-message {
-            font-size: 14px;
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-
-        .notification-type {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .type-aprobada {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .type-rechazada {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .type-disponible {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .type-removida {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .empty-state {
-            padding: 60px 30px;
-            text-align: center;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin: 20px 30px;
-            color: #6f1d1b;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 22px;
-            }
-
-            .notification-item {
-                padding: 20px;
-            }
-        }
-    </style>
 </head>
 <body>
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/SIEP/public/index.php" class="nav-logo">SIEP</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#hero" class="nav-link">Inicio</a></li>
+                <li class="nav-item"><a href="#user-section" class="nav-link">Usuarios</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showLogin" class="nav-link btn-nav">Iniciar
+                        Sesión</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showRegisterSelection"
+                        class="nav-link btn-nav">Registrarse</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
     <div class="container">
-        <div class="header">
+        <div class="page-header">
             <h1>📬 Mis Notificaciones</h1>
             <p>Aquí puedes ver todas tus notificaciones</p>
+        </div>
+        <a href="javascript:history.back()" class="logout-btn">← Volver al Dashboard</a><br><br>
+
+        <div class="header">
             <div class="header-actions">
                 <button class="btn btn-secondary" onclick="markAllAsRead()">
                     Marcar todas como leídas
                 </button>
             </div>
         </div>
-
-        <a href="javascript:history.back()" class="back-link">← Volver</a>
 
         <div class="notifications-container">
             <?php if (empty($notifications)): ?>

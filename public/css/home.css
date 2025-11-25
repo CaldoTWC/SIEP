@@ -1,0 +1,156 @@
+/* ===========================================================
+   ESTILO INSTITUCIONAL PARA HOME SIEP
+   =========================================================== */
+/* BARRA DE NAVEGACIÓN */
+.navbar {
+    background-color: #004080; /* Azul institucional */
+    padding: 0.8rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-logo {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.nav-menu {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+}
+
+
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #0066cc;
+}
+
+.btn-nav {
+    background-color: #f5a623;
+    color: #fff;
+}
+
+.btn-nav:hover {
+    background-color: #e69500;
+}
+
+/* Hero principal */
+.hero {
+    background: linear-gradient(135deg, #8c1d40, #004a99);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    margin-bottom: 15px;
+    font-weight: 800;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    max-width: 700px;
+    margin: 0 auto;
+    opacity: 0.9;
+}
+
+/* Botones principales */
+.hero-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-main {
+    padding: 15px 35px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: white;
+    color: #8c1d40;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-main:hover {
+    transform: translateY(-4px);
+    background: #f4f4f4;
+}
+
+
+/* Sección de tipos de usuario */
+.user-section {
+    max-width: 1100px;
+    margin: 50px auto;
+    text-align: center;
+}
+
+.user-section h2 {
+    font-size: 2rem;
+    color: #004a99;
+    margin-bottom: 40px;
+}
+
+.user-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 5px 18px rgba(0,0,0,0.1);
+    text-align: center;
+    border-left: 6px solid #004a99;
+    transition: 0.3s;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+}
+
+.user-card h3 {
+    color: #8c1d40;
+    margin-bottom: 15px;
+}
+
+.user-card p {
+    color: #444;
+    line-height: 1.5;
+}
+
+/* Pie de página simple */
+.footer {
+    text-align: center;
+    margin-top: 60px;
+    padding: 25px 0;
+    color: #5a6a7e;
+    font-size: 0.9rem;
+}

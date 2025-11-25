@@ -15,259 +15,31 @@ $session->guard(['student']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vacantes Disponibles - SIEP</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        .vacancies-container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-        
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .page-header h1 {
-            color: #6f1d33;
-            margin-bottom: 10px;
-            font-size: 32px;
-        }
-        
-        .page-header p {
-            color: #666;
-            font-size: 16px;
-        }
-        
-        .vacancy-card {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-left: 5px solid #005a9c;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .vacancy-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .vacancy-card h3 {
-            margin-top: 0;
-            color: #005a9c;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        
-        .company-name {
-            color: #6f1d33;
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .vacancy-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .meta-item strong {
-            color: #333;
-            font-size: 14px;
-        }
-        
-        .meta-item span {
-            color: #555;
-            font-size: 14px;
-        }
-        
-        .section-divider {
-            border-top: 2px solid #e0e0e0;
-            margin: 20px 0;
-        }
-        
-        .info-section {
-            margin: 20px 0;
-        }
-        
-        .info-section h4 {
-            color: #6f1d33;
-            margin-bottom: 12px;
-            font-size: 17px;
-            border-left: 4px solid #d4a017;
-            padding-left: 12px;
-            font-weight: 600;
-        }
-        
-        .info-section p {
-            color: #555;
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-        
-        .info-section ul {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .info-section ul li {
-            padding: 5px 0;
-            padding-left: 20px;
-            position: relative;
-            color: #555;
-            line-height: 1.6;
-        }
-        
-        .info-section ul li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #4caf50;
-            font-weight: bold;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-right: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .badge-modality {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-        
-        .badge-support {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-        
-        .badge-career {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #005a9c;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 15px;
-            margin-right: 10px;
-            transition: background 0.3s;
-            font-weight: 600;
-        }
-        
-        .btn:hover {
-            background: #003d6b;
-        }
-        
-        .btn-secondary {
-            background: #6f1d33;
-        }
-        
-        .btn-secondary:hover {
-            background: #4a1322;
-        }
-        
-        .no-vacancies {
-            text-align: center;
-            padding: 80px 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .no-vacancies h2 {
-            color: #6f1d33;
-            margin-bottom: 15px;
-        }
-        
-        .no-vacancies p {
-            color: #666;
-            font-size: 16px;
-        }
-        
-        .activities-box {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border-left: 4px solid #005a9c;
-        }
-        
-        .activities-box pre {
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-family: inherit;
-            line-height: 1.8;
-            margin: 0;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #6f1d33;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 768px) {
-            .vacancy-meta {
-                grid-template-columns: 1fr;
-            }
-            
-            .vacancy-card h3 {
-                font-size: 20px;
-            }
-            
-            .company-name {
-                font-size: 16px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/SIEP/public/css/student.css">
+
 </head>
 <body>
-    <div class="vacancies-container">
+<!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/SIEP/public/index.php" class="nav-logo">SIEP</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#hero" class="nav-link">Inicio</a></li>
+                <li class="nav-item"><a href="#user-section" class="nav-link">Usuarios</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showLogin" class="nav-link btn-nav">Iniciar
+                        Sesión</a></li>
+                <li class="nav-item"><a href="/SIEP/public/index.php?action=showRegisterSelection"
+                        class="nav-link btn-nav">Registrarse</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
         <div class="page-header">
             <h1>💼 Vacantes Disponibles</h1>
             <p>Explora las oportunidades de estancia profesional disponibles</p>
         </div>
 
-        <a href="/SIEP/public/index.php?action=studentDashboard" class="back-link">← Volver al Panel</a>
+        <a href="/SIEP/public/index.php?action=studentDashboard" class="logout-btn">← Volver al Panel</a><br><br>
 
         <?php if (empty($approvedVacancies)): ?>
             <div class="no-vacancies">
@@ -421,7 +193,7 @@ $session->guard(['student']);
         <?php endif; ?>
         
         <div style="text-align: center; margin-top: 40px;">
-            <a href="/SIEP/public/index.php?action=studentDashboard" class="back-link">← Volver al Panel</a>
+            <a href="/SIEP/public/index.php?action=studentDashboard" class="logout-btn">← Volver al Panel</a>
         </div>
     </div>
 </body>

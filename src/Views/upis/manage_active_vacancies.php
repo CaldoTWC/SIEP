@@ -9,48 +9,28 @@ $session->guard(['upis', 'admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionar Vacantes Activas - UPIS</title>
-    <link rel="stylesheet" href="/SIEP/public/css/styles.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #28a745; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        .btn-takedown {
-            background: #dc3545;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        
-        .btn-takedown:hover {
-            background: #c82333;
-        }
-        
-        .alert-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-            color: #856404;
-        }
-    </style>
+    <link rel="stylesheet" href="/SIEP/public/css/upis.css">
+
 </head>
 <body>
+    <!-- Encabezado bonito -->
+    <div class="upis-header">
+        <h1>Panel de Administración de UPIS</h1>
+    </div>
     <div class="container">
-        <h1>⚙️ Gestionar Vacantes Activas</h1>
-        <p>Supervisa y desactiva vacantes publicadas en caso de incumplimiento</p>
-        
-        <a href="/SIEP/public/index.php?action=vacancyHub" class="btn">← Volver al Hub</a>
-        
-        <div class="alert-box">
-            <strong>⚠️ Atención:</strong> Solo tumba una vacante si hay reportes de incumplimiento por parte de la empresa (horarios no acordados, actividades no relacionadas, etc.).
+        <div class="page-header">
+            <h1>⚙️ Gestionar Vacantes Activas</h1>
+            <p>Supervisa y desactiva vacantes publicadas en caso de incumplimiento</p>
         </div>
-        
+
+
+        <a href="/SIEP/public/index.php?action=vacancyHub" class="logout-btn">← Volver al Hub</a>
+
+        <div class="alert-box">
+            <strong>⚠️ Atención:</strong> Solo tumba una vacante si hay reportes de incumplimiento por parte de la
+            empresa (horarios no acordados, actividades no relacionadas, etc.).
+        </div>
+
         <?php if (empty($activeVacancies)): ?>
             <p style="margin-top: 30px;">No hay vacantes activas en este momento.</p>
         <?php else: ?>
@@ -81,17 +61,20 @@ $session->guard(['upis', 'admin']);
                             <td><?php echo htmlspecialchars($vacancy['modality']); ?></td>
                             <td><?php echo date('d/m/Y', strtotime($vacancy['approved_at'])); ?></td>
                             <td>
-                                <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>" 
-                                   class="btn" style="font-size: 13px; padding: 6px 12px;">👁️ Ver</a>
-                                <button onclick="showTakedownModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')" 
-                                        class="btn-takedown">⚠️ Tumbar</button>
+                                <a href="/SIEP/public/index.php?action=showVacancyDetails&id=<?php echo $vacancy['id']; ?>"
+                                    class="btn" style="font-size: 13px; padding: 6px 12px;">👁️ Ver</a>
+                                <button
+                                    onclick="showTakedownModal(<?php echo $vacancy['id']; ?>, '<?php echo htmlspecialchars($vacancy['title'], ENT_QUOTES); ?>')"
+                                    class="btn-takedown">⚠️ Tumbar</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
-        
+
+        <a href="/SIEP/public/index.php?action=vacancyHub" class="logout-btn">← Volver al Hub</a>
+
     </div>
     
     <script>
